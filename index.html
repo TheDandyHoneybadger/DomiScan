@@ -186,6 +186,7 @@
                     <button id="adjust-stock-btn" class="w-full py-3 font-semibold text-white bg-orange-600 rounded-lg hover:bg-orange-700 transition-all">Ajustar Estoque</button>
                     <button id="add-user-btn" class="w-full py-3 font-semibold text-white bg-cyan-600 rounded-lg hover:bg-cyan-700 transition-all">Registar Novo Funcionário</button>
                     <button id="export-data-btn" class="w-full py-3 font-semibold text-white bg-gray-600 rounded-lg hover:bg-gray-700 transition-all">Importar/Exportar Dados</button>
+                    <button id="export-changes-btn" class="w-full py-3 font-semibold text-white bg-green-600 rounded-lg hover:bg-green-700 transition-all">Exportar Mudanças</button>
                     <button id="export-sales-btn" class="w-full py-3 font-semibold text-white bg-purple-600 rounded-lg hover:bg-purple-700 transition-all">Exportar Vendas (CSV)</button>
                 </div>
             </div>
@@ -297,13 +298,11 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            // --- OBJETO DE GESTÃO DA BASE DE DADOS LOCAL ---
             const DB = {
                 get: (key) => JSON.parse(localStorage.getItem(key) || '[]'),
                 set: (key, data) => localStorage.setItem(key, JSON.stringify(data)),
             };
 
-            // --- VARIÁVEIS GLOBAIS ---
             let currentUser = null;
             let currentCart = [];
             let currentProduct = null;
@@ -314,7 +313,6 @@
             let currentPayments = [];
             let productForStockAdjustment = null;
 
-            // --- ATRIBUIÇÃO DE ELEMENTOS DA UI ---
             const setupView = document.getElementById('setup-view');
             const loginView = document.getElementById('login-view');
             const appView = document.getElementById('app-view');
@@ -414,6 +412,7 @@
             const exportAllDataBtn = document.getElementById('export-all-data-btn');
             const importFileInput = document.getElementById('import-file-input');
             const importDataBtn = document.getElementById('import-data-btn');
+            const exportChangesBtn = document.getElementById('export-changes-btn');
 
             function showAlert(message) {
                 alertMessage.textContent = message;
@@ -478,6 +477,7 @@
                                 DB.set('products', data.products);
                                 DB.set('users', data.users);
                                 DB.set('sales', data.sales || []);
+                                DB.set('change_log', []); // Initialize change log
                                 localStorage.setItem('db_initialized', 'true');
                                 
                                 setupView.classList.add('hidden');
@@ -798,6 +798,17 @@
                 historyTotalSpan.textContent = `R$ ${totalSalesValue.toFixed(2)}`;
             }
             
+            function logChange(action, details) {
+                const log = DB.get('change_log');
+                log.push({
+                    user: currentUser.username,
+                    action: action,
+                    timestamp: new Date().toISOString(),
+                    details: details
+                });
+                DB.set('change_log', log);
+            }
+
             function addNewProduct(event) {
                 event.preventDefault();
                 stopScanner();
@@ -821,6 +832,7 @@
                 const newProduct = { cod, name, price, barcode, category, subcategory, subsubcategory, estoque, prc_total: null };
                 products.push(newProduct);
                 DB.set('products', products);
+                logChange('create_product', { cod: newProduct.cod, name: newProduct.name });
                 showAlert('Produto registado com sucesso localmente.');
                 addProductForm.reset();
                 addProductModal.classList.add('hidden');
@@ -841,6 +853,7 @@
                 }
                 products[productIndex].barcode = newBarcode;
                 DB.set('products', products);
+                logChange('pair_product', { cod: cod, newBarcode: newBarcode });
                 showAlert('Código de barras associado com sucesso localmente!');
                 pairProductModal.classList.add('hidden');
             }
@@ -858,8 +871,10 @@
                     showAlert('Produto não encontrado para ajustar o estoque.');
                     return;
                 }
+                const oldStock = products[productIndex].estoque;
                 products[productIndex].estoque = newStock;
                 DB.set('products', products);
+                logChange('adjust_stock', { cod: productForStockAdjustment.cod, oldStock: oldStock, newStock: newStock });
                 showAlert('Estoque atualizado com sucesso localmente!');
                 adjustStockModal.classList.add('hidden');
             }
@@ -880,6 +895,7 @@
                 }
                 users.push({ username: newUsername, password: newPassword, role: newRole });
                 DB.set('users', users);
+                logChange('create_user', { username: newUsername, role: newRole });
                 showAlert('Utilizador registado com sucesso localmente.');
                 addUserForm.reset();
                 addUserModal.classList.add('hidden');
@@ -920,7 +936,7 @@
             }
             
             function exportAllData() {
-                const allData = { products: DB.get('products'), users: DB.get('users'), sales: DB.get('sales') };
+                const allData = { products: DB.get('products'), users: DB.get('users'), sales: DB.get('sales'), change_log: DB.get('change_log') };
                 const jsonString = JSON.stringify(allData, null, 2);
                 const blob = new Blob([jsonString], {type: "application/json"});
                 const url = URL.createObjectURL(blob);
@@ -947,6 +963,7 @@
                                     DB.set('products', data.products);
                                     DB.set('users', data.users);
                                     DB.set('sales', data.sales || []);
+                                    DB.set('change_log', data.change_log || []);
                                     localStorage.setItem('db_initialized', 'true');
                                     showAlert('Dados importados com sucesso! A aplicação será recarregada.');
                                     setTimeout(() => location.reload(), 1500);
@@ -960,6 +977,34 @@
                     }
                 };
                 reader.readAsText(file);
+            }
+
+            function exportUserChanges() {
+                const userSales = DB.get('sales').filter(s => s.userId === currentUser.username);
+                const userChanges = DB.get('change_log').filter(c => c.user === currentUser.username);
+
+                if (userSales.length === 0 && userChanges.length === 0) {
+                    showAlert('Nenhuma mudança ou venda encontrada para este utilizador.');
+                    return;
+                }
+
+                const exportData = {
+                    exportedBy: currentUser.username,
+                    exportDate: new Date().toISOString(),
+                    sales: userSales,
+                    changes: userChanges
+                };
+
+                const jsonString = JSON.stringify(exportData, null, 2);
+                const blob = new Blob([jsonString], {type: "application/json"});
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = `mudancas_${currentUser.username}_${new Date().toISOString().slice(0, 10)}.json`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(url);
             }
 
             function openPairModal() {
@@ -1103,17 +1148,29 @@
                 try {
                     const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
                     stream.getTracks().forEach(track => track.stop());
-                    const viewportId = `#${target.closest('.modal-bg, #app-view').querySelector('.scanner-viewport')?.id}`;
-                    if (target.id === 'new-cod') addProductScannerContainer.classList.remove('hidden');
-                    else if (target.id === 'new-barcode-pair') pairProductScannerContainer.classList.remove('hidden');
-                    else if (target.id === 'adjust-stock-code-input') adjustStockScannerContainer.classList.remove('hidden');
-                    else scannerModal.classList.remove('hidden');
-                    startScanner(viewportId);
+
+                    if (target.id === 'code-input') {
+                        scannerModal.classList.remove('hidden');
+                        startScanner('#scanner-viewport');
+                    } else if (target.id === 'new-cod') {
+                        addProductScannerContainer.classList.remove('hidden');
+                        startScanner('#add-product-scanner-viewport');
+                    } else if (target.id === 'new-barcode-pair') {
+                        pairProductScannerContainer.classList.remove('hidden');
+                        startScanner('#pair-product-scanner-viewport');
+                    } else if (target.id === 'adjust-stock-code-input') {
+                        adjustStockScannerContainer.classList.remove('hidden');
+                        startScanner('#adjust-stock-scanner-viewport');
+                    }
                 } catch (error) {
                     let msg = 'A permissão da câmara é necessária.';
-                    if (error.name === 'NotAllowedError') msg = 'Você negou o acesso à câmara.';
-                    else if (error.name === 'NotFoundError') msg = 'Nenhuma câmara foi encontrada.';
+                    if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
+                        msg = 'Você negou o acesso à câmara. Habilite nas configurações do seu navegador.';
+                    } else if (error.name === 'NotFoundError' || error.name === 'DevicesNotFoundError') {
+                        msg = 'Nenhuma câmara foi encontrada no seu dispositivo.';
+                    }
                     showAlert(msg);
+                    console.error("Camera Error:", error);
                 }
             }
 
@@ -1144,9 +1201,11 @@
                     const code = result.codeResult.code;
                     if (scannerTargetInput) {
                         scannerTargetInput.value = code;
-                        const event = new Event('keypress');
-                        event.key = 'Enter';
-                        scannerTargetInput.dispatchEvent(event);
+                        if (scannerTargetInput.id === 'code-input') {
+                           lookupProduct(code);
+                        } else if (scannerTargetInput.id === 'adjust-stock-code-input') {
+                           lookupProductForStock(code);
+                        }
                     }
                     if ('vibrate' in navigator) navigator.vibrate(100);
                     stopScanner();
@@ -1158,7 +1217,7 @@
             passwordInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') login(); });
             logoutBtnConfig.addEventListener('click', logout);
             codeInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') lookupProduct(codeInput.value.trim()); });
-            scanCodeBtn.addEventListener('click', () => requestCameraPermission(codeInput));
+            scanCodeBtn.addEventListener('click', () => requestCameraPermission(document.getElementById('code-input')));
             scanNewCodeBtn.addEventListener('click', () => requestCameraPermission(document.getElementById('new-cod')));
             addToCartBtn.addEventListener('click', addToCart);
             finalizeSaleBtn.addEventListener('click', finalizeSale);
@@ -1169,6 +1228,7 @@
             exportAllDataBtn.addEventListener('click', exportAllData);
             importFileInput.addEventListener('change', (e) => { importDataBtn.disabled = !e.target.files.length; });
             importDataBtn.addEventListener('click', () => importAllData({ target: importFileInput }));
+            exportChangesBtn.addEventListener('click', exportUserChanges);
             document.getElementById('register-new-product-link').addEventListener('click', () => {
                 const code = codeInput.value.trim();
                 addProductModal.classList.remove('hidden');
@@ -1200,7 +1260,7 @@
             pairSubcategorySelect.addEventListener('change', populateSubsubcategories);
             pairSubsubcategorySelect.addEventListener('change', populateProducts);
             pairProductSelect.addEventListener('change', showSelectedProductInfo);
-            scanNewBarcodePairBtn.addEventListener('click', () => requestCameraPermission(newBarcodePairInput));
+            scanNewBarcodePairBtn.addEventListener('click', () => requestCameraPermission(document.getElementById('new-barcode-pair')));
             savePairBtn.addEventListener('click', saveProductPairing);
             adjustStockBtn.addEventListener('click', openAdjustStockModal);
             closeAdjustStockBtn.addEventListener('click', () => { stopScanner(); adjustStockModal.classList.add('hidden'); });
