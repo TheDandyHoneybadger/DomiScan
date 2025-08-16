@@ -868,4 +868,4 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
     }
-});
+})
