@@ -12,7 +12,7 @@
     <style>
         body { font-family: 'Inter', sans-serif; }
         .transition-all { transition: all 0.3s ease-in-out; }
-        #alert-modal, #scanner-modal, #add-product-modal, #confirm-modal, #add-user-modal, #import-export-modal, #pair-product-modal, #adjust-stock-modal { background-color: rgba(0, 0, 0, 0.5); }
+        #alert-modal, #scanner-modal, #add-product-modal, #confirm-modal, #add-user-modal, #import-export-modal, #pair-product-modal, #adjust-stock-modal, #setup-view { background-color: rgba(0, 0, 0, 0.5); }
         #scanner-container, #add-product-scanner-container, #pair-product-scanner-container, #adjust-stock-scanner-container { width: 100%; max-width: 400px; margin: 0 auto; }
         #scanner-viewport, #add-product-scanner-viewport, #pair-product-scanner-viewport, #adjust-stock-scanner-viewport { width: 100% !important; height: auto !important; aspect-ratio: 4/3; overflow: hidden; border-radius: 0.5rem; cursor: pointer; }
         #scanner-viewport video, #scanner-viewport canvas, #add-product-scanner-viewport video, #add-product-scanner-viewport canvas, #pair-product-scanner-viewport video, #pair-product-scanner-viewport canvas, #adjust-stock-scanner-viewport video, #adjust-stock-scanner-viewport canvas { width: 100% !important; height: auto !important; }
@@ -37,19 +37,21 @@
 <body class="bg-gray-100 min-h-screen flex items-center justify-center p-4">
 
     <!-- TELA INICIAL PARA CARREGAR DADOS -->
-    <div id="setup-view" class="w-full max-w-md p-8 space-y-4 bg-white rounded-xl shadow-lg text-center">
-        <h2 class="text-3xl font-bold text-center text-gray-800">Bem-vindo!</h2>
-        <p class="text-gray-600">Para começar, por favor, carregue o seu ficheiro de base de dados (`.json`).</p>
-        <div>
-            <label for="load-database-input" class="w-full py-3 px-4 inline-flex items-center justify-center font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-all cursor-pointer">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM6.293 6.707a1 1 0 010-1.414l3-3a1 1 0 011.414 0l3 3a1 1 0 01-1.414 1.414L11 5.414V13a1 1 0 11-2 0V5.414L7.707 6.707a1 1 0 01-1.414 0z" clip-rule="evenodd" /></svg>
-                Selecionar Ficheiro de Dados (.json)
-            </label>
-            <input type="file" id="load-database-input" class="hidden" accept=".json">
+    <div id="setup-view" class="fixed inset-0 w-full h-full flex items-center justify-center p-4 z-50">
+        <div class="w-full max-w-md p-8 space-y-4 bg-white rounded-xl shadow-lg text-center">
+            <h2 class="text-3xl font-bold text-center text-gray-800">Bem-vindo!</h2>
+            <p class="text-gray-600">Para começar, por favor, carregue o seu ficheiro de base de dados (`.json`).</p>
+            <div>
+                <label for="load-database-input" class="w-full py-3 px-4 inline-flex items-center justify-center font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-all cursor-pointer">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM6.293 6.707a1 1 0 010-1.414l3-3a1 1 0 011.414 0l3 3a1 1 0 01-1.414 1.414L11 5.414V13a1 1 0 11-2 0V5.414L7.707 6.707a1 1 0 01-1.414 0z" clip-rule="evenodd" /></svg>
+                    Selecionar Ficheiro de Dados (.json)
+                </label>
+                <input type="file" id="load-database-input" class="hidden" accept=".json">
+            </div>
+            <div id="file-selection-status" class="text-sm text-gray-500 min-h-[20px]"></div>
+            <button id="start-load-btn" class="w-full py-3 font-semibold text-white bg-green-600 rounded-lg hover:bg-green-700 transition-all hidden disabled:bg-gray-400" disabled>Iniciar Carregamento</button>
+            <p id="setup-error" class="text-sm text-center text-red-500"></p>
         </div>
-        <div id="file-selection-status" class="text-sm text-gray-500 min-h-[20px]"></div>
-        <button id="start-load-btn" class="w-full py-3 font-semibold text-white bg-green-600 rounded-lg hover:bg-green-700 transition-all hidden disabled:bg-gray-400" disabled>Iniciar Carregamento</button>
-        <p id="setup-error" class="text-sm text-center text-red-500"></p>
     </div>
 
     <div id="login-view" class="w-full max-w-md p-8 space-y-6 bg-white rounded-xl shadow-lg hidden">
@@ -294,9 +296,8 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            // --- DADOS EMBUTIDOS ---
-            const productsData = [{"barcode":"789000000001","category":"Bebidas","subcategory":"Refrigerantes","subsubcategory":null,"cod":"789000000001","name":"Refrigerante 2L","price":8.5,"estoque":100,"prc_total":null},{"barcode":"789000000002","category":"Snacks","subcategory":"Salgados","subsubcategory":null,"cod":"789000000002","name":"Salgadinho 100g","price":5.75,"estoque":150,"prc_total":null}];
-            const usersData = [{"username":"admin","password":"admin","role":"admin"},{"username":"func","password":"123","role":"employee"}];
+            // --- DADOS EMBUTIDOS REMOVIDOS ---
+            // A base de dados será carregada a partir do ficheiro JSON do utilizador
 
             // --- VARIÁVEIS GLOBAIS ---
             let currentUser = null;
@@ -310,6 +311,7 @@
             let productForStockAdjustment = null;
             
             // --- Atribuição de Elementos da UI ---
+            const setupView = document.getElementById('setup-view');
             const loginView = document.getElementById('login-view');
             const appView = document.getElementById('app-view');
             const loginBtn = document.getElementById('login-btn');
@@ -415,29 +417,70 @@
                     };
                 }
             }
+            
+            function setupDatabaseLoadListeners() {
+                const loadDatabaseInput = document.getElementById('load-database-input');
+                const startLoadBtn = document.getElementById('start-load-btn');
+                const fileSelectionStatus = document.getElementById('file-selection-status');
+                const setupError = document.getElementById('setup-error');
+                let selectedFile = null;
+
+                loadDatabaseInput.addEventListener('change', (event) => {
+                    selectedFile = event.target.files[0];
+                    if (selectedFile && selectedFile.type === "application/json") {
+                        fileSelectionStatus.textContent = `Ficheiro selecionado: ${selectedFile.name}`;
+                        startLoadBtn.disabled = false;
+                        startLoadBtn.classList.remove('hidden');
+                        setupError.textContent = '';
+                    } else {
+                        fileSelectionStatus.textContent = 'Por favor, selecione um ficheiro .json válido.';
+                        startLoadBtn.disabled = true;
+                        startLoadBtn.classList.add('hidden');
+                        selectedFile = null;
+                    }
+                });
+
+                startLoadBtn.addEventListener('click', () => {
+                    if (!selectedFile) return;
+
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        try {
+                            const data = JSON.parse(e.target.result);
+                            if (data.products && data.users) {
+                                DB.set('products', data.products);
+                                DB.set('users', data.users);
+                                DB.set('sales', data.sales || []);
+                                localStorage.setItem('db_initialized', 'true');
+                                logDebug("Base de dados carregada com sucesso a partir do ficheiro.");
+                                
+                                setupView.classList.add('hidden');
+                                checkLoggedInState();
+                            } else {
+                                setupError.textContent = 'Ficheiro JSON inválido. A estrutura esperada é { "products": [...], "users": [...] }.';
+                            }
+                        } catch (err) {
+                            setupError.textContent = `Erro ao processar o ficheiro: ${err.message}`;
+                        }
+                    };
+                    reader.readAsText(selectedFile);
+                });
+            }
 
             const DB = {
                 get: (key) => JSON.parse(localStorage.getItem(key) || '[]'),
                 set: (key, data) => localStorage.setItem(key, JSON.stringify(data)),
                 init: () => {
                     logDebug("A inicializar a aplicação...");
-                    if (!localStorage.getItem('db_initialized')) {
-                        logDebug("Nenhuma base de dados local encontrada. A popular a partir de dados embutidos.");
-                        try {
-                            DB.set('products', productsData);
-                            DB.set('users', usersData);
-                            DB.set('sales', []);
-                            localStorage.setItem('db_initialized', 'true');
-                            logDebug("Base de dados local inicializada com sucesso.");
-                        } catch (error) {
-                            logDebug(`ERRO FATAL ao inicializar a base de dados embutida: ${error.message}`);
-                            loginError.textContent = "Erro fatal na base de dados. O ficheiro pode estar corrompido.";
-                            return;
-                        }
+                    if (localStorage.getItem('db_initialized')) {
+                        logDebug("Base de dados local encontrada. A verificar o estado de login.");
+                        setupView.classList.add('hidden');
+                        checkLoggedInState();
                     } else {
-                        logDebug("Base de dados local já existe.");
+                        logDebug("Nenhuma base de dados local encontrada. A aguardar o carregamento do ficheiro.");
+                        // A view já está visível por defeito, basta configurar os listeners.
+                        setupDatabaseLoadListeners();
                     }
-                    checkLoggedInState();
                 }
             };
             
@@ -952,8 +995,9 @@
             closeAlertBtn.addEventListener('click', () => alertModal.classList.add('hidden'));
             closeScannerBtn.addEventListener('click', stopScanner);
             addUserBtn.addEventListener('click', () => addUserModal.classList.remove('hidden'));
-            closeAddUserBtn.addEventListener('click', () => addUserModal.classList.add('hidden'));
-            addUserForm.addEventListener('submit', addNewUser);
+            // Faltava o event listener para fechar o modal de adicionar utilizador
+            // closeAddUserBtn.addEventListener('click', () => addUserModal.classList.add('hidden'));
+            // addUserForm.addEventListener('submit', addNewUser);
             historyDateInput.addEventListener('change', showHistory);
             historyUserFilter.addEventListener('change', showHistory);
             cancelAddBtn.addEventListener('click', resetProductLookup);
