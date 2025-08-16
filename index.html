@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Sistema de Pedidos Offline</title>
+    <title>Sistema de Pedidos</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -417,29 +417,24 @@
             get: (key) => JSON.parse(localStorage.getItem(key) || '[]'),
             set: (key, data) => localStorage.setItem(key, JSON.stringify(data)),
             init: () => {
-                const loadingView = document.getElementById('loading-view');
+                const setupView = document.getElementById('setup-view');
                 const loginView = document.getElementById('login-view');
                 
-                try {
-                    if (!localStorage.getItem('db_initialized')) {
-                        DB.set('products', productsData);
-                        DB.set('users', usersData);
-                        DB.set('sales', []);
-                        localStorage.setItem('db_initialized', 'true');
-                        console.log('Banco de dados local inicializado.');
-                    } else {
-                        console.log('Banco de dados local já existe.');
-                    }
-                    loadingView.classList.add('hidden');
+                if (localStorage.getItem('db_initialized')) {
+                    setupView.classList.add('hidden');
                     loginView.classList.remove('hidden');
-                } catch (error) {
-                    loadingView.innerHTML = `<p class="text-red-500 font-bold">Erro fatal ao carregar a base de dados.</p><p class="text-sm mt-2">O arquivo pode estar corrompido. Tente gerar um novo arquivo HTML com o script Python.</p>`;
-                    console.error("Erro na inicialização do DB:", error);
+                    checkLoggedInState();
+                } else {
+                    setupView.classList.remove('hidden');
+                    loginView.classList.add('hidden');
                 }
             }
         };
 
         // --- Elementos da UI ---
+        const setupView = document.getElementById('setup-view');
+        const loadDatabaseInput = document.getElementById('load-database-input');
+        const setupError = document.getElementById('setup-error');
         const loginView = document.getElementById('login-view');
         const appView = document.getElementById('app-view');
         const loginBtn = document.getElementById('login-btn');
@@ -533,14 +528,12 @@
         const adjustStockScannerContainer = document.getElementById('adjust-stock-scanner-container');
         const stockDecreaseBtn = document.getElementById('stock-decrease-btn');
         const stockIncreaseBtn = document.getElementById('stock-increase-btn');
-        // Novos elementos de Import/Export
         const importExportBtn = document.getElementById('import-export-btn');
         const importExportModal = document.getElementById('import-export-modal');
         const closeImportExportBtn = document.getElementById('close-import-export-btn');
         const exportAllDataBtn = document.getElementById('export-all-data-btn');
         const importFileInput = document.getElementById('import-file-input');
         const importDataBtn = document.getElementById('import-data-btn');
-
 
         let currentUser = null;
         let currentCart = [];
@@ -570,7 +563,33 @@
             };
         }
         
-        // --- LÓGICA OFFLINE ---
+        function handleDataLoad(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    if (data.products && data.users) {
+                        DB.set('products', data.products);
+                        DB.set('users', data.users);
+                        DB.set('sales', data.sales || []);
+                        localStorage.setItem('db_initialized', 'true');
+                        
+                        showAlert('Base de dados carregada com sucesso!');
+                        setupView.classList.add('hidden');
+                        document.getElementById('login-view').classList.remove('hidden');
+                    } else {
+                        throw new Error('O ficheiro não contém as tabelas "products" e "users".');
+                    }
+                } catch (err) {
+                    setupError.textContent = `Erro ao processar o ficheiro: ${err.message}`;
+                    console.error("Erro ao carregar dados:", err);
+                }
+            };
+            reader.readAsText(file);
+        }
         
         function login() {
             const username = usernameInput.value.trim();
