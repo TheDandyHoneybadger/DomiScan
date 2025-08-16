@@ -269,12 +269,11 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            // --- DADOS EMBUTIDOS (PLACEHOLDER) ---
-            const productsData = '__PRODUCTS_DATA_PLACEHOLDER__';
-            const usersData = '__USERS_DATA_PLACEHOLDER__';
+            // --- DADOS EMBUTIDOS ---
+            const productsData = [{"barcode":"789000000001","category":"Bebidas","subcategory":"Refrigerantes","subsubcategory":null,"cod":"789000000001","name":"Refrigerante 2L","price":8.5,"estoque":100,"prc_total":null},{"barcode":"789000000002","category":"Snacks","subcategory":"Salgados","subsubcategory":null,"cod":"789000000002","name":"Salgadinho 100g","price":5.75,"estoque":150,"prc_total":null}];
+            const usersData = [{"username":"admin","password":"admin","role":"admin"},{"username":"func","password":"123","role":"employee"}];
 
             // --- VARIÁVEIS GLOBAIS ---
-            let fileToLoad = null;
             let currentUser = null;
             let currentCart = [];
             let currentProduct = null;
@@ -286,10 +285,6 @@
             let productForStockAdjustment = null;
             
             // --- Atribuição de Elementos da UI ---
-            const setupView = document.getElementById('setup-view');
-            const loadDatabaseInput = document.getElementById('load-database-input');
-            const startLoadBtn = document.getElementById('start-load-btn');
-            const setupError = document.getElementById('setup-error');
             const loginView = document.getElementById('login-view');
             const appView = document.getElementById('app-view');
             const loginBtn = document.getElementById('login-btn');
@@ -401,69 +396,25 @@
                 set: (key, data) => localStorage.setItem(key, JSON.stringify(data)),
                 init: () => {
                     logDebug("A inicializar a aplicação...");
-                    if (localStorage.getItem('db_initialized')) {
-                        logDebug("Base de dados local encontrada. A ir para o login.");
-                        setupView.classList.add('hidden');
-                        loginView.classList.remove('hidden');
-                        checkLoggedInState();
+                    if (!localStorage.getItem('db_initialized')) {
+                        logDebug("Nenhuma base de dados local encontrada. A popular a partir de dados embutidos.");
+                        try {
+                            DB.set('products', productsData);
+                            DB.set('users', usersData);
+                            DB.set('sales', []);
+                            localStorage.setItem('db_initialized', 'true');
+                            logDebug("Base de dados local inicializada com sucesso.");
+                        } catch (error) {
+                            logDebug(`ERRO FATAL ao inicializar a base de dados embutida: ${error.message}`);
+                            loginError.textContent = "Erro fatal na base de dados. O ficheiro pode estar corrompido.";
+                            return;
+                        }
                     } else {
-                        logDebug("Nenhuma base de dados local encontrada. A mostrar ecrã de configuração.");
-                        setupView.classList.remove('hidden');
-                        loginView.classList.add('hidden');
+                        logDebug("Base de dados local já existe.");
                     }
+                    checkLoggedInState();
                 }
             };
-
-            function handleFileSelection(event) {
-                fileToLoad = event.target.files[0];
-                const fileStatus = document.getElementById('file-selection-status');
-                const startButton = document.getElementById('start-load-btn');
-                
-                if (fileToLoad) {
-                    fileStatus.textContent = `Ficheiro selecionado: ${fileToLoad.name}`;
-                    startButton.disabled = false;
-                    startButton.classList.remove('hidden');
-                    logDebug(`Ficheiro selecionado: ${fileToLoad.name}`);
-                } else {
-                    fileStatus.textContent = '';
-                    startButton.disabled = true;
-                    startButton.classList.add('hidden');
-                }
-            }
-
-            function processLoadedFile() {
-                if (!fileToLoad) {
-                    showAlert("Nenhum ficheiro selecionado para carregar.");
-                    return;
-                }
-
-                logDebug("A iniciar o processamento do ficheiro...");
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    try {
-                        const data = JSON.parse(e.target.result);
-                        logDebug("Ficheiro lido e JSON processado.");
-                        if (data.products && data.users) {
-                            DB.set('products', data.products);
-                            DB.set('users', data.users);
-                            DB.set('sales', data.sales || []);
-                            localStorage.setItem('db_initialized', 'true');
-                            
-                            logDebug("Base de dados guardada no localStorage com sucesso.");
-                            showAlert('Base de dados carregada com sucesso!');
-                            setupView.classList.add('hidden');
-                            loginView.classList.remove('hidden');
-                        } else {
-                            throw new Error('O ficheiro não contém as tabelas "products" e "users".');
-                        }
-                    } catch (err) {
-                        setupError.textContent = `Erro ao processar o ficheiro: ${err.message}`;
-                        logDebug(`ERRO ao processar o ficheiro: ${err.message}`);
-                        console.error("Erro ao carregar dados:", err);
-                    }
-                };
-                reader.readAsText(fileToLoad);
-            }
             
             // --- Lógica do Aplicativo (funções principais) ---
             function login() {
@@ -530,6 +481,9 @@
                 if (savedUser) {
                     currentUser = JSON.parse(savedUser);
                     showAppView();
+                } else {
+                    loginView.classList.remove('hidden');
+                    appView.classList.add('hidden');
                 }
             }
 
@@ -961,8 +915,6 @@
             function switchTab(tabId) { tabContents.forEach(content => content.classList.add('hidden')); tabButtons.forEach(button => button.classList.remove('tab-active')); document.getElementById(tabId).classList.remove('hidden'); document.querySelector(`[data-tab="${tabId}"]`).classList.add('tab-active'); if (tabId === 'historico-view') { historyDateInput.valueAsDate = new Date(); showHistory(); } }
 
             // --- Event Listeners ---
-            loadDatabaseInput.addEventListener('change', handleFileSelection);
-            startLoadBtn.addEventListener('click', processLoadedFile);
             loginBtn.addEventListener('click', login);
             passwordInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') login(); });
             logoutBtnConfig.addEventListener('click', logout);
