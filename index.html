@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Sistema de Pedidos Offline</title>
+    <title>Sistema de Pedidos</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -36,8 +36,24 @@
 </head>
 <body class="bg-gray-100 min-h-screen flex items-center justify-center p-4">
 
-    <div id="login-view" class="w-full max-w-md p-8 space-y-6 bg-white rounded-xl shadow-lg">
-        <h2 class="text-3xl font-bold text-center text-gray-800">Aceder ao Sistema Offline</h2>
+    <!-- TELA INICIAL PARA CARREGAR DADOS -->
+    <div id="setup-view" class="w-full max-w-md p-8 space-y-4 bg-white rounded-xl shadow-lg text-center">
+        <h2 class="text-3xl font-bold text-center text-gray-800">Bem-vindo!</h2>
+        <p class="text-gray-600">Para começar, por favor, carregue o seu ficheiro de base de dados (`.json`).</p>
+        <div>
+            <label for="load-database-input" class="w-full py-3 px-4 inline-flex items-center justify-center font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-all cursor-pointer">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM6.293 6.707a1 1 0 010-1.414l3-3a1 1 0 011.414 0l3 3a1 1 0 01-1.414 1.414L11 5.414V13a1 1 0 11-2 0V5.414L7.707 6.707a1 1 0 01-1.414 0z" clip-rule="evenodd" /></svg>
+                Selecionar Ficheiro de Dados (.json)
+            </label>
+            <input type="file" id="load-database-input" class="hidden" accept=".json">
+        </div>
+        <div id="file-selection-status" class="text-sm text-gray-500 min-h-[20px]"></div>
+        <button id="start-load-btn" class="w-full py-3 font-semibold text-white bg-green-600 rounded-lg hover:bg-green-700 transition-all hidden disabled:bg-gray-400" disabled>Iniciar Carregamento</button>
+        <p id="setup-error" class="text-sm text-center text-red-500"></p>
+    </div>
+
+    <div id="login-view" class="w-full max-w-md p-8 space-y-6 bg-white rounded-xl shadow-lg hidden">
+        <h2 class="text-3xl font-bold text-center text-gray-800">Aceder ao Sistema</h2>
         <div>
             <label for="username" class="block text-sm font-medium text-gray-700">Utilizador</label>
             <input type="text" id="username" class="mt-1 block w-full px-4 py-2 text-base text-gray-700 bg-gray-100 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
@@ -220,21 +236,30 @@
     <div id="scanner-modal" class="fixed inset-0 w-full h-full flex items-center justify-center hidden z-50 p-4"><div class="bg-white rounded-xl shadow-2xl p-6 max-w-md w-full"><div class="flex justify-between items-center mb-4"><h2 class="text-xl font-bold text-gray-800">Aponte para o Código</h2><button id="close-scanner-btn" class="text-gray-500 hover:text-gray-800 text-2xl leading-none">&times;</button></div><div id="scanner-container" class="relative"><div id="scanner-viewport"></div></div></div></div>
     <div id="add-product-modal" class="fixed inset-0 w-full h-full flex items-center justify-center hidden z-50 p-4">
         <div class="bg-white rounded-xl shadow-2xl p-6 max-w-md w-full overflow-y-auto max-h-full">
-            <!-- Conteúdo do modal de adicionar produto (omitido por brevidade) -->
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-bold text-gray-800">Registar Novo Produto</h2>
+                <button id="close-add-product-btn" class="text-gray-500 hover:text-gray-800 text-2xl leading-none">&times;</button>
+            </div>
+            <div id="add-product-scanner-container" class="relative hidden mb-4 bg-gray-200 rounded-lg">
+                <div id="add-product-scanner-viewport"></div>
+            </div>
+            <form id="add-product-form" class="space-y-3">
+                <!-- Campos do formulário de produto -->
+            </form>
         </div>
     </div>
     <div id="pair-product-modal" class="fixed inset-0 w-full h-full flex items-center justify-center hidden z-50 p-4">
         <div class="bg-white rounded-xl shadow-2xl p-6 max-w-md w-full overflow-y-auto max-h-full">
-            <!-- Conteúdo do modal de casar produto (omitido por brevidade) -->
+            <!-- Conteúdo do modal de casar produto -->
         </div>
     </div>
     <div id="adjust-stock-modal" class="fixed inset-0 w-full h-full flex items-center justify-center hidden z-50 p-4">
         <div class="bg-white rounded-xl shadow-2xl p-6 max-w-md w-full overflow-y-auto max-h-full">
-            <!-- Conteúdo do modal de ajustar estoque (omitido por brevidade) -->
+            <!-- Conteúdo do modal de ajustar estoque -->
         </div>
     </div>
     <div id="add-user-modal" class="fixed inset-0 w-full h-full flex items-center justify-center hidden z-50 p-4"><div class="bg-white rounded-xl shadow-2xl p-6 max-w-md w-full">
-        <!-- Conteúdo do modal de adicionar utilizador (omitido por brevidade) -->
+        <!-- Conteúdo do modal de adicionar utilizador -->
     </div></div>
     <div id="import-export-modal" class="fixed inset-0 w-full h-full flex items-center justify-center hidden z-50 p-4">
         <div class="bg-white rounded-xl shadow-2xl p-6 max-w-md w-full">
