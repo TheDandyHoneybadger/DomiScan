@@ -125,11 +125,23 @@
                     </div>
                     <div class="mt-2 pt-2 border-t">
                         <div class="space-y-3">
-                            <h4 class="text-md font-semibold text-gray-700">Pagamento</h4>
+                            <h4 class="text-md font-semibold text-gray-700">Desconto</h4>
+                            <div class="flex items-center gap-4">
+                                <div class="flex items-center">
+                                    <input id="discount-5-percent" type="checkbox" class="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
+                                    <label for="discount-5-percent" class="ml-2 text-sm text-gray-700">5%</label>
+                                </div>
+                                <div>
+                                    <label for="discount-custom-amount" class="sr-only">Outro valor de desconto</label>
+                                    <input type="number" id="discount-custom-amount" placeholder="Outro valor" class="w-28 px-2 py-1 text-sm bg-gray-100 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                </div>
+                            </div>
+
+                            <h4 class="text-md font-semibold text-gray-700 pt-2 border-t mt-4">Pagamento</h4>
                             <div id="payment-entries" class="space-y-2"></div>
                             <div class="flex items-end gap-2">
                                 <div class="flex-1">
-                                    <label for="payment-method-select" class="block text-xs font-medium text-gray-600">Método</label>
+                                    <label for="payment-method-select" class="block text-xs font-medium text-gray-600">Forma de Pagamento</label>
                                     <select id="payment-method-select" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
                                         <option>Dinheiro</option><option>Pix</option><option>Cartão de Crédito</option><option>Cartão de Débito</option><option>Créditos</option>
                                     </select>
@@ -140,8 +152,10 @@
                                         <option value="À Vista">À Vista</option><option value="2x">2x</option><option value="3x">3x</option><option value="4x">4x</option><option value="5x">5x</option><option value="6x">6x</option><option value="7x">7x</option><option value="8x">8x</option><option value="9x">9x</option><option value="10x">10x</option>
                                     </select>
                                 </div>
+                            </div>
+                             <div class="flex items-end gap-2 mt-2">
                                 <div class="flex-1">
-                                    <label for="payment-amount-input" class="block text-xs font-medium text-gray-600">Valor</label>
+                                    <label for="payment-amount-input" class="block text-xs font-medium text-gray-600">Valor Pago</label>
                                     <input type="number" id="payment-amount-input" placeholder="0.00" class="mt-1 block w-full px-3 py-2 text-base bg-gray-100 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
                                 </div>
                                 <button id="add-payment-btn" class="h-10 px-4 font-semibold text-white bg-cyan-600 rounded-lg hover:bg-cyan-700">Add</button>
@@ -149,7 +163,7 @@
                         </div>
                         <div class="mt-4 space-y-1 text-sm">
                             <div class="flex justify-between"><span>Subtotal:</span><span id="cart-subtotal">R$ 0,00</span></div>
-                            <div id="discount-info" class="hidden text-green-600 flex justify-between"><span>Desconto (5%):</span><span id="discount-amount">- R$ 0,00</span></div>
+                            <div id="discount-info" class="hidden text-green-600 flex justify-between"><span>Desconto:</span><span id="discount-amount">- R$ 0,00</span></div>
                             <div class="flex justify-between font-semibold"><span>Total Pago:</span><span id="total-paid">R$ 0,00</span></div>
                             <div class="flex justify-between font-semibold" id="remaining-balance-container"><span>Restante:</span><span id="remaining-balance" class="text-red-600">R$ 0,00</span></div>
                         </div>
@@ -413,6 +427,8 @@
             const importFileInput = document.getElementById('import-file-input');
             const importDataBtn = document.getElementById('import-data-btn');
             const exportChangesBtn = document.getElementById('export-changes-btn');
+            const discount5PercentCheckbox = document.getElementById('discount-5-percent');
+            const discountCustomAmountInput = document.getElementById('discount-custom-amount');
 
             function showAlert(message) {
                 alertMessage.textContent = message;
@@ -687,41 +703,63 @@
 
             function updateSaleTotals() {
                 const subtotal = currentCart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-                let finalTotal = subtotal;
                 let discount = 0;
-                const hasCashOrPix = currentPayments.some(p => p.method === 'Dinheiro' || p.method === 'Pix');
-                if (hasCashOrPix && subtotal > 0) {
+                const customDiscountValue = parseFloat(discountCustomAmountInput.value);
+
+                if (discount5PercentCheckbox.checked) {
                     discount = subtotal * 0.05;
-                    finalTotal = subtotal - discount;
+                } else if (!isNaN(customDiscountValue) && customDiscountValue > 0) {
+                    discount = customDiscountValue;
+                }
+
+                if (discount > subtotal) {
+                    discount = subtotal;
+                }
+
+                let finalTotal = subtotal - discount;
+                
+                cartSubtotalSpan.textContent = `R$ ${subtotal.toFixed(2)}`;
+                if (discount > 0) {
                     discountAmountSpan.textContent = `- R$ ${discount.toFixed(2)}`;
                     discountInfo.classList.remove('hidden');
                 } else {
                     discountInfo.classList.add('hidden');
                 }
+
                 const totalPaid = currentPayments.reduce((sum, p) => sum + p.amount, 0);
                 const remaining = finalTotal - totalPaid;
-                cartSubtotalSpan.textContent = `R$ ${subtotal.toFixed(2)}`;
+                
                 cartTotal.textContent = `R$ ${finalTotal.toFixed(2)}`;
                 totalPaidSpan.textContent = `R$ ${totalPaid.toFixed(2)}`;
                 remainingBalanceSpan.textContent = `R$ ${remaining.toFixed(2)}`;
-                remainingBalanceSpan.classList.toggle('text-red-600', remaining > 0);
-                remainingBalanceSpan.classList.toggle('text-green-600', remaining <= 0);
+                remainingBalanceSpan.classList.toggle('text-red-600', remaining > 0.01);
+                remainingBalanceSpan.classList.toggle('text-green-600', remaining <= 0.01);
+                
                 const isFullyPaid = Math.abs(remaining) < 0.01;
                 finalizeSaleBtn.disabled = currentCart.length === 0 || !isFullyPaid;
             }
 
             function finalizeSale() {
                 if (currentCart.length === 0 || currentPayments.length === 0) return;
+                
                 const subtotal = currentCart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-                let finalTotal = subtotal;
-                if (currentPayments.some(p => p.method === 'Dinheiro' || p.method === 'Pix')) {
-                    finalTotal = subtotal * 0.95;
+                let discount = 0;
+                const customDiscountValue = parseFloat(discountCustomAmountInput.value);
+                if (discount5PercentCheckbox.checked) {
+                    discount = subtotal * 0.05;
+                } else if (!isNaN(customDiscountValue) && customDiscountValue > 0) {
+                    discount = customDiscountValue;
                 }
+                if (discount > subtotal) discount = subtotal;
+
+                const finalTotal = subtotal - discount;
+
                 const allSales = DB.get('sales');
                 const newSaleId = (allSales.length > 0 ? Math.max(...allSales.map(s => s.id)) : 0) + 1;
-                const saleData = { id: newSaleId, userId: currentUser.username, timestamp: new Date().toISOString(), items: currentCart, total: finalTotal, payments: currentPayments };
+                const saleData = { id: newSaleId, userId: currentUser.username, timestamp: new Date().toISOString(), items: currentCart, total: finalTotal, discount: discount, payments: currentPayments };
                 allSales.push(saleData);
                 DB.set('sales', allSales);
+                
                 let products = DB.get('products');
                 currentCart.forEach(cartItem => {
                     const productIndex = products.findIndex(p => p.cod === cartItem.cod);
@@ -730,6 +768,7 @@
                     }
                 });
                 DB.set('products', products);
+                
                 showAlert('Venda finalizada e guardada localmente!');
                 startNewSale();
             }
@@ -737,6 +776,8 @@
             function startNewSale() {
                 currentCart = [];
                 currentPayments = [];
+                discount5PercentCheckbox.checked = false;
+                discountCustomAmountInput.value = '';
                 updateCartUI();
                 updatePaymentsUI();
                 resetProductLookup();
@@ -783,6 +824,7 @@
                             text += `: R$ ${p.amount.toFixed(2)}`;
                             return `<span class="bg-blue-100 text-blue-800 text-xs font-medium px-2 py-0.5 rounded">${text}</span>`;
                         }).join(' ');
+                        const discountHtml = sale.discount ? `<div class="text-xs text-green-600 mt-1">Desconto: - R$ ${sale.discount.toFixed(2)}</div>` : '';
                         const saleTimestamp = new Date(sale.timestamp);
                         saleElement.innerHTML = `
                             <div class="flex justify-between font-semibold text-sm">
@@ -790,6 +832,7 @@
                                 <p>Total: R$ ${sale.total.toFixed(2)}</p>
                             </div>
                             <div class="text-xs text-gray-600 mt-1"><span>Vendedor: ${sale.userId}</span></div>
+                            ${discountHtml}
                             <div class="mt-2 text-xs"><p class="font-semibold mb-1">Pagamentos:</p><div class="flex flex-wrap gap-2">${paymentsHtml}</div></div>
                             <div class="mt-2 text-xs"><p class="font-semibold mb-1">Itens:</p><ul class="list-disc list-inside">${itemsHtml}</ul></div>`;
                         historyContent.appendChild(saleElement);
@@ -911,10 +954,10 @@
                     return;
                 }
                 let csvContent = "data:text/csv;charset=utf-8,";
-                csvContent += "ID Venda;Data;Vendedor;Total Venda;Cod Produto;Nome Produto;Quantidade;Preço Unitário;Subtotal Item;Método Pagamento;Valor Pago;Parcelas\r\n";
+                csvContent += "ID Venda;Data;Vendedor;Total Venda;Desconto;Cod Produto;Nome Produto;Quantidade;Preço Unitário;Subtotal Item;Método Pagamento;Valor Pago;Parcelas\r\n";
                 sales.forEach(sale => {
                     const saleDate = new Date(sale.timestamp).toLocaleString('pt-BR');
-                    const saleBaseRow = `${sale.id};${saleDate};${sale.userId};${sale.total.toFixed(2)}`;
+                    const saleBaseRow = `${sale.id};${saleDate};${sale.userId};${sale.total.toFixed(2)};${(sale.discount || 0).toFixed(2)}`;
                     sale.items.forEach((item, itemIndex) => {
                         let row = `${saleBaseRow};${item.cod};"${item.name}";${item.quantity};${item.price.toFixed(2)};${(item.quantity * item.price).toFixed(2)}`;
                         if (itemIndex < sale.payments.length) {
@@ -1269,6 +1312,18 @@
             saveStockAdjustmentBtn.addEventListener('click', saveStockAdjustment);
             stockDecreaseBtn.addEventListener('click', () => { const val = parseInt(adjustStockNewStock.value, 10) || 0; if (val > 0) adjustStockNewStock.value = val - 1; });
             stockIncreaseBtn.addEventListener('click', () => { const val = parseInt(adjustStockNewStock.value, 10) || 0; adjustStockNewStock.value = val + 1; });
+            discount5PercentCheckbox.addEventListener('change', () => {
+                if (discount5PercentCheckbox.checked) {
+                    discountCustomAmountInput.value = '';
+                }
+                updateSaleTotals();
+            });
+            discountCustomAmountInput.addEventListener('input', () => {
+                if (discountCustomAmountInput.value) {
+                    discount5PercentCheckbox.checked = false;
+                }
+                updateSaleTotals();
+            });
 
             initializeApp();
         });
