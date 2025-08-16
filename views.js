@@ -2,6 +2,22 @@
 // Isso ajuda a manter o index.html limpo e a organizar o código.
 
 const Views = {
+    setupView: `
+    <div id="setup-view" class="w-full max-w-md p-8 space-y-4 bg-white rounded-xl shadow-lg text-center hidden">
+        <h2 class="text-3xl font-bold text-center text-gray-800">Bem-vindo!</h2>
+        <p class="text-gray-600">Para começar, por favor, carregue o seu ficheiro de base de dados (.json).</p>
+        <div>
+            <label for="load-database-input" class="w-full py-3 px-4 inline-flex items-center justify-center font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-all cursor-pointer">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM6.293 6.707a1 1 0 010-1.414l3-3a1 1 0 011.414 0l3 3a1 1 0 01-1.414 1.414L11 5.414V13a1 1 0 11-2 0V5.414L7.707 6.707a1 1 0 01-1.414 0z" clip-rule="evenodd" /></svg>
+                Selecionar Ficheiro de Dados (.json)
+            </label>
+            <input type="file" id="load-database-input" class="hidden" accept=".json">
+        </div>
+        <div id="file-selection-status" class="text-sm text-gray-500 min-h-[20px]"></div>
+        <button id="start-load-btn" class="w-full py-3 font-semibold text-white bg-green-600 rounded-lg hover:bg-green-700 transition-all hidden disabled:bg-gray-400" disabled>Iniciar Carregamento</button>
+        <p id="setup-error" class="text-sm text-center text-red-500"></p>
+    </div>
+    `,
     loginView: `
     <div id="login-view" class="w-full max-w-md p-8 space-y-6 bg-white rounded-xl shadow-lg">
         <h2 class="text-3xl font-bold text-center text-gray-800">Aceder ao Sistema</h2>
@@ -273,6 +289,7 @@ const Views = {
 
 // Função para injetar o HTML no DOM
 function injectViews() {
+    document.getElementById('setup-view-container').innerHTML = Views.setupView;
     document.getElementById('login-view-container').innerHTML = Views.loginView;
     document.getElementById('app-view-container').innerHTML = Views.appView;
     document.getElementById('modals-container').innerHTML = Views.modals;
