@@ -13,7 +13,7 @@
         body { font-family: 'Inter', sans-serif; }
         .transition-all { transition: all 0.3s ease-in-out; }
         .modal-bg { background-color: rgba(0, 0, 0, 0.5); }
-        #scanner-container, #add-product-scanner-container, #pair-product-scanner-container, #adjust-stock-scanner-container { width: 100%; max-width: 400px; margin: 0 auto; }
+        .scanner-container { width: 100%; max-width: 400px; margin: 0 auto; }
         .scanner-viewport { width: 100% !important; height: auto !important; aspect-ratio: 4/3; overflow: hidden; border-radius: 0.5rem; cursor: pointer; }
         .scanner-viewport video, .scanner-viewport canvas { width: 100% !important; height: auto !important; }
         
@@ -36,21 +36,195 @@
 </head>
 <body class="bg-gray-100 min-h-screen flex items-center justify-center p-4">
 
-    <!-- A Tela de Setup será injetada aqui -->
-    <div id="setup-view-container"></div>
+    <!-- TELA INICIAL PARA CARREGAR DADOS -->
+    <div id="setup-view" class="w-full max-w-md p-8 space-y-4 bg-white rounded-xl shadow-lg text-center hidden">
+        <h2 class="text-3xl font-bold text-center text-gray-800">Bem-vindo!</h2>
+        <p class="text-gray-600">Para começar, por favor, carregue o seu ficheiro de base de dados (`.json`).</p>
+        <div>
+            <label for="load-database-input" class="w-full py-3 px-4 inline-flex items-center justify-center font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-all cursor-pointer">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM6.293 6.707a1 1 0 010-1.414l3-3a1 1 0 011.414 0l3 3a1 1 0 01-1.414 1.414L11 5.414V13a1 1 0 11-2 0V5.414L7.707 6.707a1 1 0 01-1.414 0z" clip-rule="evenodd" /></svg>
+                Selecionar Ficheiro de Dados (.json)
+            </label>
+            <input type="file" id="load-database-input" class="hidden" accept=".json">
+        </div>
+        <div id="file-selection-status" class="text-sm text-gray-500 min-h-[20px]"></div>
+        <button id="start-load-btn" class="w-full py-3 font-semibold text-white bg-green-600 rounded-lg hover:bg-green-700 transition-all hidden disabled:bg-gray-400" disabled>Iniciar Carregamento</button>
+        <p id="setup-error" class="text-sm text-center text-red-500"></p>
+    </div>
 
-    <!-- O Login View será injetado aqui -->
-    <div id="login-view-container"></div>
+    <!-- TELA DE LOGIN -->
+    <div id="login-view" class="w-full max-w-md p-8 space-y-6 bg-white rounded-xl shadow-lg hidden">
+        <h2 class="text-3xl font-bold text-center text-gray-800">Aceder ao Sistema</h2>
+        <div>
+            <label for="username" class="block text-sm font-medium text-gray-700">Utilizador</label>
+            <input type="text" id="username" class="mt-1 block w-full px-4 py-2 text-base text-gray-700 bg-gray-100 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+        </div>
+        <div>
+            <label for="password" class="block text-sm font-medium text-gray-700">Senha</label>
+            <input type="password" id="password" class="mt-1 block w-full px-4 py-2 text-base text-gray-700 bg-gray-100 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+        </div>
+        <div class="flex items-center">
+            <input id="keep-logged-in" name="keep-logged-in" type="checkbox" class="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
+            <label for="keep-logged-in" class="ml-2 block text-sm text-gray-900">Permanecer ligado</label>
+        </div>
+        <button id="login-btn" class="w-full py-3 mt-4 font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 transition-all">
+            Entrar
+        </button>
+        <p id="login-error" class="text-sm text-center text-red-500"></p>
+    </div>
 
-    <!-- O App View (interface principal) será injetado aqui -->
-    <div id="app-view-container"></div>
+    <!-- TELA PRINCIPAL DA APLICAÇÃO -->
+    <div id="app-view" class="w-full max-w-md bg-gray-50 hidden flex flex-col h-screen">
+        <!-- Navegação por Abas -->
+        <nav class="bg-white shadow-md">
+            <div class="flex justify-around border-b">
+                <button data-tab="vender-view" class="tab-btn flex-1 py-4 px-2 text-center text-sm font-medium border-b-2 border-transparent hover:text-blue-500 transition-all">Vender</button>
+                <button data-tab="historico-view" class="tab-btn flex-1 py-4 px-2 text-center text-sm font-medium border-b-2 border-transparent hover:text-blue-500 transition-all">Histórico</button>
+                <button data-tab="admin-view" id="admin-tab-btn" class="tab-btn flex-1 py-4 px-2 text-center text-sm font-medium border-b-2 border-transparent hover:text-blue-500 transition-all hidden">Admin</button>
+                <button data-tab="config-view" class="tab-btn flex-1 py-4 px-2 text-center text-sm font-medium border-b-2 border-transparent hover:text-blue-500 transition-all">Configurações</button>
+            </div>
+        </nav>
 
-    <!-- Os Modais (pop-ups) serão injetados aqui -->
-    <div id="modals-container"></div>
+        <!-- Conteúdo das Abas -->
+        <main class="flex-grow overflow-y-auto">
+            <!-- ABA VENDER -->
+            <div id="vender-view" class="tab-content p-4">
+                <!-- ... (código da aba de vendas) ... -->
+            </div>
+            <!-- ABA HISTÓRICO -->
+            <div id="historico-view" class="tab-content p-4 hidden">
+                 <!-- ... (código da aba de histórico) ... -->
+            </div>
+            <!-- ABA ADMIN -->
+            <div id="admin-view" class="tab-content p-4 hidden">
+                <div class="bg-white w-full rounded-xl shadow-md p-6 flex flex-col gap-4">
+                    <h2 class="text-xl font-bold text-gray-800 text-center">Painel do Administrador</h2>
+                    <button id="add-product-btn" class="w-full py-3 font-semibold text-white bg-teal-600 rounded-lg hover:bg-teal-700 transition-all">Registar Novo Produto</button>
+                    <button id="pair-product-btn" class="w-full py-3 font-semibold text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-all">Casar Produto</button>
+                    <button id="adjust-stock-btn" class="w-full py-3 font-semibold text-white bg-orange-600 rounded-lg hover:bg-orange-700 transition-all">Ajustar Estoque</button>
+                    <button id="add-user-btn" class="w-full py-3 font-semibold text-white bg-cyan-600 rounded-lg hover:bg-cyan-700 transition-all">Registar Novo Funcionário</button>
+                    <button id="export-data-btn" class="w-full py-3 font-semibold text-white bg-gray-600 rounded-lg hover:bg-gray-700 transition-all">Importar/Exportar Dados</button>
+                    <button id="export-sales-btn" class="w-full py-3 font-semibold text-white bg-purple-600 rounded-lg hover:bg-purple-700 transition-all">Exportar Vendas (CSV)</button>
+                </div>
+            </div>
+            <!-- ABA CONFIGURAÇÕES -->
+            <div id="config-view" class="tab-content p-4 hidden">
+                 <!-- ... (código da aba de configurações) ... -->
+            </div>
+        </main>
+    </div>
 
-    <!-- Scripts da Aplicação -->
-    <script src="database.js"></script>
-    <script src="views.js"></script>
-    <script src="app.js"></script>
+    <!-- MODAIS -->
+    <!-- ... (todos os modais aqui) ... -->
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- OBJETO DE GESTÃO DA BASE DE DADOS LOCAL ---
+            const DB = {
+                get: (key) => JSON.parse(localStorage.getItem(key) || '[]'),
+                set: (key, data) => localStorage.setItem(key, JSON.stringify(data)),
+            };
+
+            // --- VARIÁVEIS GLOBAIS ---
+            let currentUser = null;
+            // ... (outras variáveis globais)
+
+            // --- ATRIBUIÇÃO DE ELEMENTOS DA UI ---
+            const setupView = document.getElementById('setup-view');
+            const loginView = document.getElementById('login-view');
+            const appView = document.getElementById('app-view');
+            // ... (restante das atribuições de elementos)
+
+            // --- FUNÇÕES AUXILIARES (showAlert, showConfirm) ---
+            // ...
+
+            // --- LÓGICA DE INICIALIZAÇÃO ---
+            function initializeApp() {
+                if (localStorage.getItem('db_initialized')) {
+                    // Se a base de dados já existe, esconde a tela de setup e verifica o login
+                    setupView.classList.add('hidden');
+                    checkLoggedInState();
+                } else {
+                    // Se for a primeira vez, mostra a tela de setup e esconde as outras
+                    setupView.classList.remove('hidden');
+                    loginView.classList.add('hidden');
+                    appView.classList.add('hidden');
+                    setupDatabaseLoadListeners();
+                }
+            }
+            
+            function setupDatabaseLoadListeners() {
+                const loadDatabaseInput = document.getElementById('load-database-input');
+                const startLoadBtn = document.getElementById('start-load-btn');
+                const fileSelectionStatus = document.getElementById('file-selection-status');
+                const setupError = document.getElementById('setup-error');
+                let selectedFile = null;
+
+                loadDatabaseInput.addEventListener('change', (event) => {
+                    selectedFile = event.target.files[0];
+                    if (selectedFile && selectedFile.type === "application/json") {
+                        fileSelectionStatus.textContent = `Ficheiro selecionado: ${selectedFile.name}`;
+                        startLoadBtn.disabled = false;
+                        startLoadBtn.classList.remove('hidden');
+                        setupError.textContent = '';
+                    } else {
+                        fileSelectionStatus.textContent = 'Por favor, selecione um ficheiro .json válido.';
+                        startLoadBtn.disabled = true;
+                        startLoadBtn.classList.add('hidden');
+                        selectedFile = null;
+                    }
+                });
+
+                startLoadBtn.addEventListener('click', () => {
+                    if (!selectedFile) return;
+
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        try {
+                            const data = JSON.parse(e.target.result);
+                            if (data.products && data.users) {
+                                DB.set('products', data.products);
+                                DB.set('users', data.users);
+                                DB.set('sales', data.sales || []);
+                                localStorage.setItem('db_initialized', 'true');
+                                
+                                // Esconde a tela de setup e mostra a de login
+                                setupView.classList.add('hidden');
+                                showLoginView();
+                            } else {
+                                setupError.textContent = 'Ficheiro JSON inválido. A estrutura esperada é { "products": [...], "users": [...] }.';
+                            }
+                        } catch (err) {
+                            setupError.textContent = `Erro ao processar o ficheiro: ${err.message}`;
+                        }
+                    };
+                    reader.readAsText(selectedFile);
+                });
+            }
+
+            function checkLoggedInState() {
+                let savedUser = localStorage.getItem('loggedInUser') || sessionStorage.getItem('loggedInUser');
+                if (savedUser) {
+                    currentUser = JSON.parse(savedUser);
+                    showAppView();
+                } else {
+                    showLoginView();
+                }
+            }
+
+            function showLoginView() {
+                appView.classList.add('hidden');
+                loginView.classList.remove('hidden');
+                // ... (limpar campos se necessário)
+            }
+            
+            // --- RESTANTE DO CÓDIGO (login, logout, showAppView, lógica de vendas, admin, etc.) ---
+            // ... (todo o resto do seu código JavaScript vai aqui)
+
+
+            // --- CHAMADA INICIAL ---
+            initializeApp();
+        });
+    </script>
 </body>
 </html>
