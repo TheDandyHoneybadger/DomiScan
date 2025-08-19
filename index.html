@@ -219,11 +219,20 @@
     <!-- MODAIS -->
     <div id="alert-modal" class="fixed inset-0 w-full h-full flex items-center justify-center hidden z-50 modal-bg"><div class="bg-white w-full max-w-sm rounded-xl shadow-2xl p-6 text-center"><p id="alert-message" class="text-lg text-gray-700 mb-4"></p><button id="close-alert-btn" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">OK</button></div></div>
     <div id="confirm-modal" class="fixed inset-0 w-full h-full flex items-center justify-center hidden z-50 modal-bg"><div class="bg-white w-full max-w-sm rounded-xl shadow-2xl p-6 text-center"><p id="confirm-message" class="text-lg text-gray-700 mb-6"></p><div class="flex justify-center gap-4"><button id="confirm-no-btn" class="px-6 py-2 bg-gray-300 text-gray-800 rounded-lg hover:bg-gray-400">Não</button><button id="confirm-yes-btn" class="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">Sim</button></div></div></div>
-    <div id="scanner-modal" class="fixed inset-0 w-full h-full flex items-center justify-center hidden z-50 p-4 modal-bg"><div class="bg-white rounded-xl shadow-2xl p-6 max-w-md w-full"><div class="flex justify-between items-center mb-4"><h2 class="text-xl font-bold text-gray-800">Aponte para o Código</h2><button id="close-scanner-btn" class="text-gray-500 hover:text-gray-800 text-2xl leading-none">&times;</button></div><div id="scanner-container" class="relative scanner-container"><div id="scanner-viewport" class="scanner-viewport"></div></div></div></div>
+    <div id="scanner-modal" class="fixed inset-0 w-full h-full flex items-center justify-center hidden z-50 p-4 modal-bg">
+        <div class="bg-white rounded-xl shadow-2xl p-6 max-w-md w-full">
+            <div class="flex justify-between items-center mb-4"><h2 class="text-xl font-bold text-gray-800">Aponte para o Código</h2><button id="close-scanner-btn" class="text-gray-500 hover:text-gray-800 text-2xl leading-none">&times;</button></div>
+            <div id="scanner-container" class="relative scanner-container"><div id="scanner-viewport" class="scanner-viewport"></div></div>
+            <div class="mt-4 flex justify-center"><button class="focus-btn hidden px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">Focar</button></div>
+        </div>
+    </div>
     <div id="add-product-modal" class="fixed inset-0 w-full h-full flex items-center justify-center hidden z-50 p-4 modal-bg">
         <div class="bg-white rounded-xl shadow-2xl p-6 max-w-md w-full overflow-y-auto max-h-full">
             <div class="flex justify-between items-center mb-4"><h2 class="text-xl font-bold text-gray-800">Registar Novo Produto</h2><button id="close-add-product-btn" class="text-gray-500 hover:text-gray-800 text-2xl leading-none">&times;</button></div>
-            <div id="add-product-scanner-container" class="relative hidden mb-4 bg-gray-200 rounded-lg scanner-container"><div id="add-product-scanner-viewport" class="scanner-viewport"></div></div>
+            <div id="add-product-scanner-container" class="relative hidden mb-4 bg-gray-200 rounded-lg scanner-container">
+                <div id="add-product-scanner-viewport" class="scanner-viewport"></div>
+                <div class="mt-2 flex justify-center"><button class="focus-btn hidden px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">Focar</button></div>
+            </div>
             <form id="add-product-form" class="space-y-3">
                 <div>
                     <label for="new-cod" class="block text-sm font-medium text-gray-700">Código (Chave Primária)</label>
@@ -246,7 +255,10 @@
     <div id="pair-product-modal" class="fixed inset-0 w-full h-full flex items-center justify-center hidden z-50 p-4 modal-bg">
         <div class="bg-white rounded-xl shadow-2xl p-6 max-w-md w-full overflow-y-auto max-h-full">
             <div class="flex justify-between items-center mb-4"><h2 class="text-xl font-bold text-gray-800">Casar Produto com Código de Barras</h2><button id="close-pair-product-btn" class="text-gray-500 hover:text-gray-800 text-2xl leading-none">&times;</button></div>
-            <div id="pair-product-scanner-container" class="relative hidden mb-4 bg-gray-200 rounded-lg scanner-container"><div id="pair-product-scanner-viewport" class="scanner-viewport"></div></div>
+            <div id="pair-product-scanner-container" class="relative hidden mb-4 bg-gray-200 rounded-lg scanner-container">
+                <div id="pair-product-scanner-viewport" class="scanner-viewport"></div>
+                <div class="mt-2 flex justify-center"><button class="focus-btn hidden px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">Focar</button></div>
+            </div>
             <div class="space-y-4">
                 <div><label for="pair-category" class="block text-sm font-medium text-gray-700">1. Selecione a Categoria</label><select id="pair-category" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 sm:text-sm"><option value="">-- Escolha --</option></select></div>
                 <div><label for="pair-subcategory" class="block text-sm font-medium text-gray-700">2. Selecione a Subcategoria</label><select id="pair-subcategory" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 sm:text-sm" disabled><option value="">-- Escolha --</option></select></div>
@@ -267,7 +279,10 @@
     <div id="adjust-stock-modal" class="fixed inset-0 w-full h-full flex items-center justify-center hidden z-50 p-4 modal-bg">
         <div class="bg-white rounded-xl shadow-2xl p-6 max-w-md w-full overflow-y-auto max-h-full">
             <div class="flex justify-between items-center mb-4"><h2 class="text-xl font-bold text-gray-800">Ajustar Estoque de Produto</h2><button id="close-adjust-stock-btn" class="text-gray-500 hover:text-gray-800 text-2xl leading-none">&times;</button></div>
-            <div id="adjust-stock-scanner-container" class="relative hidden mb-4 bg-gray-200 rounded-lg scanner-container"><div id="adjust-stock-scanner-viewport" class="scanner-viewport"></div></div>
+            <div id="adjust-stock-scanner-container" class="relative hidden mb-4 bg-gray-200 rounded-lg scanner-container">
+                <div id="adjust-stock-scanner-viewport" class="scanner-viewport"></div>
+                <div class="mt-2 flex justify-center"><button class="focus-btn hidden px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">Focar</button></div>
+            </div>
             <div class="space-y-4">
                 <div>
                     <label for="adjust-stock-code-input" class="block text-sm font-medium text-gray-700">1. Código do Produto</label>
@@ -429,6 +444,7 @@
             const exportChangesBtn = document.getElementById('export-changes-btn');
             const discount5PercentCheckbox = document.getElementById('discount-5-percent');
             const discountCustomAmountInput = document.getElementById('discount-custom-amount');
+            const focusButtons = document.querySelectorAll('.focus-btn');
 
             function showAlert(message) {
                 alertMessage.textContent = message;
@@ -636,7 +652,6 @@
                 productInfo.classList.add('hidden');
                 document.getElementById('product-found-controls').classList.add('hidden');
                 document.getElementById('product-not-found-controls').classList.add('hidden');
-                // codeInput.focus(); // REMOVIDO PARA NÃO ABRIR O TECLADO
             }
 
             function removeFromCart(code) {
@@ -1216,6 +1231,21 @@
                     console.error("Camera Error:", error);
                 }
             }
+            
+            function triggerFocus() {
+                if (Quagga && isScannerActive) {
+                    try {
+                        const track = Quagga.CameraAccess.getActiveTrack();
+                        if (track && typeof track.applyConstraints === 'function') {
+                            track.applyConstraints({ advanced: [{ focusMode: 'continuous' }] })
+                                .then(() => console.log('Autofoco acionado.'))
+                                .catch(e => console.error('Este dispositivo não suporta o controlo de foco.', e));
+                        }
+                    } catch (e) {
+                        console.error('Erro ao obter a faixa da câmara:', e);
+                    }
+                }
+            }
 
             function startScanner(viewportSelector) {
                 Quagga.init({
@@ -1228,6 +1258,11 @@
                     if (err) { showAlert('Erro ao iniciar a câmara.'); return; }
                     Quagga.start();
                     isScannerActive = true;
+                    const container = document.querySelector(viewportSelector).closest('.modal-bg, .scanner-container');
+                    if (container) {
+                        const focusBtn = container.querySelector('.focus-btn');
+                        if (focusBtn) focusBtn.classList.remove('hidden');
+                    }
                 });
             }
 
@@ -1237,6 +1272,7 @@
                     isScannerActive = false;
                 }
                 [scannerModal, addProductScannerContainer, pairProductScannerContainer, adjustStockScannerContainer].forEach(el => el.classList.add('hidden'));
+                focusButtons.forEach(btn => btn.classList.add('hidden'));
             }
 
             Quagga.onDetected((result) => {
@@ -1323,6 +1359,9 @@
                     discount5PercentCheckbox.checked = false;
                 }
                 updateSaleTotals();
+            });
+            focusButtons.forEach(btn => {
+                btn.addEventListener('click', triggerFocus);
             });
 
             initializeApp();
