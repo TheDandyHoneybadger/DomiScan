@@ -508,7 +508,7 @@
                             if (data.products && data.users) {
                                 DB.set('products', data.products);
                                 DB.set('users', data.users);
-                                DB.set('sales', data.sales || []);
+                                DB.set('vendas_log', data.vendas_log || []);
                                 DB.set('change_log', []); // Initialize change log
                                 localStorage.setItem('db_initialized', 'true');
                                 
@@ -769,11 +769,18 @@
 
                 const finalTotal = subtotal - discount;
 
-                const allSales = DB.get('sales');
-                const newSaleId = (allSales.length > 0 ? Math.max(...allSales.map(s => s.id)) : 0) + 1;
-                const saleData = { id: newSaleId, userId: currentUser.username, timestamp: new Date().toISOString(), items: currentCart, total: finalTotal, discount: discount, payments: currentPayments };
-                allSales.push(saleData);
-                DB.set('sales', allSales);
+                const vendasLog = DB.get('vendas_log');
+                const saleData = {
+                    timestamp: new Date().toISOString(),
+                    vendedor: currentUser.username,
+                    produtos: currentCart.map(item => `${item.quantity}x ${item.name}`).join(', '),
+                    formas_pagamento: currentPayments.map(p => p.method).join(', '),
+                    valores_pagos: currentPayments.map(p => p.amount.toFixed(2)).join(', '),
+                    desconto: discount.toFixed(2),
+                    valor_total: finalTotal.toFixed(2)
+                };
+                vendasLog.push(saleData);
+                DB.set('vendas_log', vendasLog);
                 
                 let products = DB.get('products');
                 currentCart.forEach(cartItem => {
@@ -811,45 +818,49 @@
 
             function showHistory() {
                 const selectedDate = historyDateInput.value;
-                let allSales = DB.get('sales');
+                let allSales = DB.get('vendas_log');
+                
                 if (selectedDate) {
                     allSales = allSales.filter(sale => sale.timestamp.startsWith(selectedDate));
                 }
+
                 if (currentUser.role !== 'admin') {
-                    allSales = allSales.filter(sale => sale.userId === currentUser.username);
+                    allSales = allSales.filter(sale => sale.vendedor === currentUser.username);
                 } else {
                     const selectedUser = historyUserFilter.value;
                     if (selectedUser !== 'all') {
-                        allSales = allSales.filter(sale => sale.userId === selectedUser);
+                        allSales = allSales.filter(sale => sale.vendedor === selectedUser);
                     }
                 }
+                
                 allSales.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
                 historyContent.innerHTML = '';
                 let totalSalesValue = 0;
+
                 if (allSales.length === 0) {
                     historyContent.innerHTML = '<p class="text-gray-500">Nenhuma venda registada para esta data/filtro.</p>';
                 } else {
                     allSales.forEach(sale => {
-                        totalSalesValue += sale.total;
+                        totalSalesValue += parseFloat(sale.valor_total);
                         const saleElement = document.createElement('div');
                         saleElement.className = 'p-3 border rounded-lg bg-gray-50';
-                        const itemsHtml = sale.items.map(item => `<li class="text-xs">${item.quantity}x ${item.name}</li>`).join('');
-                        const paymentsHtml = sale.payments.map(p => {
-                            let text = p.method + (p.installments ? ` (${p.installments})` : '');
-                            text += `: R$ ${p.amount.toFixed(2)}`;
-                            return `<span class="bg-blue-100 text-blue-800 text-xs font-medium px-2 py-0.5 rounded">${text}</span>`;
-                        }).join(' ');
-                        const discountHtml = sale.discount ? `<div class="text-xs text-green-600 mt-1">Desconto: - R$ ${sale.discount.toFixed(2)}</div>` : '';
                         const saleTimestamp = new Date(sale.timestamp);
+                        const discountHtml = sale.desconto > 0 ? `<div class="text-xs text-green-600 mt-1">Desconto: - R$ ${parseFloat(sale.desconto).toFixed(2)}</div>` : '';
+                        
                         saleElement.innerHTML = `
                             <div class="flex justify-between font-semibold text-sm">
-                                <p>Venda #${sale.id.toString().padStart(4, '0')} - ${saleTimestamp.toLocaleDateString('pt-BR')} ${saleTimestamp.toLocaleTimeString('pt-BR')}</p>
-                                <p>Total: R$ ${sale.total.toFixed(2)}</p>
+                                <p>${saleTimestamp.toLocaleDateString('pt-BR')} ${saleTimestamp.toLocaleTimeString('pt-BR')}</p>
+                                <p>Total: R$ ${parseFloat(sale.valor_total).toFixed(2)}</p>
                             </div>
-                            <div class="text-xs text-gray-600 mt-1"><span>Vendedor: ${sale.userId}</span></div>
+                            <div class="text-xs text-gray-600 mt-1"><span>Vendedor: ${sale.vendedor}</span></div>
                             ${discountHtml}
-                            <div class="mt-2 text-xs"><p class="font-semibold mb-1">Pagamentos:</p><div class="flex flex-wrap gap-2">${paymentsHtml}</div></div>
-                            <div class="mt-2 text-xs"><p class="font-semibold mb-1">Itens:</p><ul class="list-disc list-inside">${itemsHtml}</ul></div>`;
+                            <div class="mt-2 text-xs">
+                                <p class="font-semibold mb-1">Pagamentos: ${sale.formas_pagamento} (${sale.valores_pagos})</p>
+                            </div>
+                            <div class="mt-2 text-xs">
+                                <p class="font-semibold mb-1">Itens:</p>
+                                <p>${sale.produtos}</p>
+                            </div>`;
                         historyContent.appendChild(saleElement);
                     });
                 }
@@ -963,26 +974,16 @@
             }
             
             function exportSalesToCSV() {
-                const sales = DB.get('sales');
+                const sales = DB.get('vendas_log');
                 if (sales.length === 0) {
                     showAlert("Nenhuma venda para exportar.");
                     return;
                 }
                 let csvContent = "data:text/csv;charset=utf-8,";
-                csvContent += "ID Venda;Data;Vendedor;Total Venda;Desconto;Cod Produto;Nome Produto;Quantidade;Preço Unitário;Subtotal Item;Método Pagamento;Valor Pago;Parcelas\r\n";
+                csvContent += "Data e Hora;Vendedor;Produtos;Formas de Pagamento;Valores Pagos;Desconto;Valor Total\r\n";
                 sales.forEach(sale => {
-                    const saleDate = new Date(sale.timestamp).toLocaleString('pt-BR');
-                    const saleBaseRow = `${sale.id};${saleDate};${sale.userId};${sale.total.toFixed(2)};${(sale.discount || 0).toFixed(2)}`;
-                    sale.items.forEach((item, itemIndex) => {
-                        let row = `${saleBaseRow};${item.cod};"${item.name}";${item.quantity};${item.price.toFixed(2)};${(item.quantity * item.price).toFixed(2)}`;
-                        if (itemIndex < sale.payments.length) {
-                            const payment = sale.payments[itemIndex];
-                            row += `;${payment.method};${payment.amount.toFixed(2)};${payment.installments || ''}`;
-                        } else {
-                            row += ";;;";
-                        }
-                        csvContent += row + "\r\n";
-                    });
+                    let row = `"${sale.timestamp}";"${sale.vendedor}";"${sale.produtos}";"${sale.formas_pagamento}";"${sale.valores_pagos}";"${sale.desconto}";"${sale.valor_total}"`;
+                    csvContent += row + "\r\n";
                 });
                 const encodedUri = encodeURI(csvContent);
                 const link = document.createElement("a");
@@ -994,7 +995,12 @@
             }
             
             function exportAllData() {
-                const allData = { products: DB.get('products'), users: DB.get('users'), sales: DB.get('sales'), change_log: DB.get('change_log') };
+                const allData = { 
+                    products: DB.get('products'), 
+                    users: DB.get('users'), 
+                    vendas_log: DB.get('vendas_log'), 
+                    change_log: DB.get('change_log') 
+                };
                 const jsonString = JSON.stringify(allData, null, 2);
                 const blob = new Blob([jsonString], {type: "application/json"});
                 const url = URL.createObjectURL(blob);
@@ -1020,7 +1026,7 @@
                                 if (confirmed) {
                                     DB.set('products', data.products);
                                     DB.set('users', data.users);
-                                    DB.set('sales', data.sales || []);
+                                    DB.set('vendas_log', data.vendas_log || []);
                                     DB.set('change_log', data.change_log || []);
                                     localStorage.setItem('db_initialized', 'true');
                                     showAlert('Dados importados com sucesso! A aplicação será recarregada.');
@@ -1038,7 +1044,7 @@
             }
 
             function exportUserChanges() {
-                const userSales = DB.get('sales').filter(s => s.userId === currentUser.username);
+                const userSales = DB.get('vendas_log').filter(s => s.vendedor === currentUser.username);
                 const userChanges = DB.get('change_log').filter(c => c.user === currentUser.username);
 
                 if (userSales.length === 0 && userChanges.length === 0) {
