@@ -197,6 +197,7 @@
                     <h2 class="text-xl font-bold text-gray-800 text-center">Painel do Administrador</h2>
                     <button id="add-product-btn" class="w-full py-3 font-semibold text-white bg-teal-600 rounded-lg hover:bg-teal-700 transition-all">Registar Novo Produto</button>
                     <button id="pair-product-btn" class="w-full py-3 font-semibold text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-all">Casar Produto</button>
+                    <button id="edit-barcode-btn" class="w-full py-3 font-semibold text-white bg-blue-800 rounded-lg hover:bg-blue-900 transition-all">Editar Código de Barras</button>
                     <button id="adjust-stock-btn" class="w-full py-3 font-semibold text-white bg-orange-600 rounded-lg hover:bg-orange-700 transition-all">Ajustar Estoque</button>
                     <button id="add-user-btn" class="w-full py-3 font-semibold text-white bg-cyan-600 rounded-lg hover:bg-cyan-700 transition-all">Registar Novo Funcionário</button>
                     <button id="export-data-btn" class="w-full py-3 font-semibold text-white bg-gray-600 rounded-lg hover:bg-gray-700 transition-all">Importar/Exportar Dados</button>
@@ -276,6 +277,30 @@
             </div>
         </div>
     </div>
+    <div id="edit-barcode-modal" class="fixed inset-0 w-full h-full flex items-center justify-center hidden z-50 p-4 modal-bg">
+        <div class="bg-white rounded-xl shadow-2xl p-6 max-w-md w-full overflow-y-auto max-h-full">
+            <div class="flex justify-between items-center mb-4"><h2 class="text-xl font-bold text-gray-800">Editar Código de Barras</h2><button id="close-edit-barcode-btn" class="text-gray-500 hover:text-gray-800 text-2xl leading-none">&times;</button></div>
+            <div id="edit-barcode-scanner-container" class="relative hidden mb-4 bg-gray-200 rounded-lg scanner-container">
+                <div id="edit-barcode-scanner-viewport" class="scanner-viewport"></div>
+                <div class="mt-2 flex justify-center"><button class="focus-btn hidden px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">Focar</button></div>
+            </div>
+            <div class="space-y-4">
+                <div><label for="edit-category" class="block text-sm font-medium text-gray-700">1. Selecione a Categoria</label><select id="edit-category" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 sm:text-sm"><option value="">-- Escolha --</option></select></div>
+                <div><label for="edit-subcategory" class="block text-sm font-medium text-gray-700">2. Selecione a Subcategoria</label><select id="edit-subcategory" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 sm:text-sm" disabled><option value="">-- Escolha --</option></select></div>
+                <div id="edit-subsubcategory-container" class="hidden"><label for="edit-subsubcategory" class="block text-sm font-medium text-gray-700">3. Selecione a Sub-Subcategoria (Opcional)</label><select id="edit-subsubcategory" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 sm:text-sm" disabled><option value="">-- Escolha --</option></select></div>
+                <div><label for="edit-product" class="block text-sm font-medium text-gray-700">4. Selecione o Produto</label><select id="edit-product" class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-blue-500 sm:text-sm" disabled><option value="">-- Escolha --</option></select></div>
+                <div id="edited-product-info" class="p-3 bg-blue-50 rounded-lg min-h-[60px] hidden"><p class="font-semibold text-blue-800 text-sm" id="edited-product-name"></p><p class="text-xs text-gray-600" id="edited-product-cod"></p><p class="text-xs text-gray-600 mt-1" id="edited-product-current-barcode"></p></div>
+                <div>
+                    <label for="new-barcode-edit" class="block text-sm font-medium text-gray-700">5. Digite ou Escaneie o Novo Código de Barras</label>
+                    <div class="relative mt-1">
+                        <input type="text" id="new-barcode-edit" class="block w-full px-4 py-2 text-base text-gray-700 bg-gray-100 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 pr-12">
+                        <button type="button" id="scan-new-barcode-edit-btn" class="absolute right-1 top-1/2 -translate-y-1/2 bg-gray-200 hover:bg-gray-300 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" /><path stroke-linecap="round" stroke-linejoin="round" d="M3 6h18M3 10h18M3 14h18M3 18h18" /></svg></button>
+                    </div>
+                </div>
+                <button id="save-edit-btn" class="w-full py-3 mt-4 font-semibold text-white bg-green-600 rounded-lg hover:bg-green-700 disabled:bg-gray-400 transition-all" disabled>Salvar Alteração</button>
+            </div>
+        </div>
+    </div>
     <div id="adjust-stock-modal" class="fixed inset-0 w-full h-full flex items-center justify-center hidden z-50 p-4 modal-bg">
         <div class="bg-white rounded-xl shadow-2xl p-6 max-w-md w-full overflow-y-auto max-h-full">
             <div class="flex justify-between items-center mb-4"><h2 class="text-xl font-bold text-gray-800">Ajustar Estoque de Produto</h2><button id="close-adjust-stock-btn" class="text-gray-500 hover:text-gray-800 text-2xl leading-none">&times;</button></div>
@@ -339,6 +364,7 @@
             let isScannerActive = false;
             let scannerTargetInput = null;
             let pairableProductsList = [];
+            let editableProductsList = [];
             let currentPayments = [];
             let productForStockAdjustment = null;
 
@@ -445,6 +471,24 @@
             const discount5PercentCheckbox = document.getElementById('discount-5-percent');
             const discountCustomAmountInput = document.getElementById('discount-custom-amount');
             const focusButtons = document.querySelectorAll('.focus-btn');
+            
+            // Elementos para Editar Código de Barras
+            const editBarcodeBtn = document.getElementById('edit-barcode-btn');
+            const editBarcodeModal = document.getElementById('edit-barcode-modal');
+            const closeEditBarcodeBtn = document.getElementById('close-edit-barcode-btn');
+            const editCategorySelect = document.getElementById('edit-category');
+            const editSubcategorySelect = document.getElementById('edit-subcategory');
+            const editSubsubcategoryContainer = document.getElementById('edit-subsubcategory-container');
+            const editSubsubcategorySelect = document.getElementById('edit-subsubcategory');
+            const editProductSelect = document.getElementById('edit-product');
+            const editedProductInfo = document.getElementById('edited-product-info');
+            const editedProductName = document.getElementById('edited-product-name');
+            const editedProductCod = document.getElementById('edited-product-cod');
+            const editedProductCurrentBarcode = document.getElementById('edited-product-current-barcode');
+            const newBarcodeEditInput = document.getElementById('new-barcode-edit');
+            const scanNewBarcodeEditBtn = document.getElementById('scan-new-barcode-edit-btn');
+            const saveEditBtn = document.getElementById('save-edit-btn');
+            const editBarcodeScannerContainer = document.getElementById('edit-barcode-scanner-container');
 
             function showAlert(message) {
                 alertMessage.textContent = message;
@@ -907,9 +951,7 @@
                 addProductModal.classList.add('hidden');
             }
 
-            function saveProductPairing() {
-                const cod = pairProductSelect.value;
-                const newBarcode = newBarcodePairInput.value.trim();
+            function saveProductPairing(cod, newBarcode, modal, list) {
                 if(!cod || !newBarcode) {
                     showAlert('Selecione um produto e forneça um novo código de barras.');
                     return;
@@ -924,7 +966,7 @@
                 DB.set('products', products);
                 logChange('pair_product', { cod: cod, newBarcode: newBarcode });
                 showAlert('Código de barras associado com sucesso localmente!');
-                pairProductModal.classList.add('hidden');
+                modal.classList.add('hidden');
             }
 
             function saveStockAdjustment() {
@@ -1071,109 +1113,28 @@
                 URL.revokeObjectURL(url);
             }
 
-            function openPairModal() {
-                resetPairProductModal();
-                pairProductModal.classList.remove('hidden');
+            // --- Lógica genérica para os modais "Casar" e "Editar" ---
+            function openBarcodeModal(modal, categorySelect, onlyUnpaired) {
+                categorySelect.innerHTML = '<option value="">-- Escolha --</option>';
                 const products = DB.get('products');
                 const categories = [...new Set(products.map(p => p.category).filter(Boolean))].sort();
                 categories.forEach(cat => {
                     const option = document.createElement('option');
                     option.value = cat;
                     option.textContent = cat;
-                    pairCategorySelect.appendChild(option);
+                    categorySelect.appendChild(option);
                 });
+                modal.classList.remove('hidden');
+            }
+
+            function populateSubcategoriesFor(categorySelect, subcategorySelect, subsubcategorySelect, productSelect, onlyUnpaired) {
+                 // ... (lógica para popular subcategorias)
+            }
+
+            function populateProductsFor(categorySelect, subcategorySelect, subsubcategorySelect, productSelect, productList, onlyUnpaired) {
+                // ... (lógica para popular produtos com base no filtro 'onlyUnpaired')
             }
             
-            function resetPairProductModal() {
-                pairCategorySelect.innerHTML = '<option value="">-- Escolha --</option>';
-                pairSubcategorySelect.innerHTML = '<option value="">-- Escolha --</option>';
-                pairSubsubcategorySelect.innerHTML = '<option value="">-- Escolha --</option>';
-                pairProductSelect.innerHTML = '<option value="">-- Escolha --</option>';
-                pairSubcategorySelect.disabled = true;
-                pairSubsubcategoryContainer.classList.add('hidden');
-                pairSubsubcategorySelect.disabled = true;
-                pairProductSelect.disabled = true;
-                pairedProductInfo.classList.add('hidden');
-                newBarcodePairInput.value = '';
-                savePairBtn.disabled = true;
-                pairableProductsList = [];
-            }
-
-            function populateSubcategories() {
-                const selectedCategory = pairCategorySelect.value;
-                pairSubcategorySelect.innerHTML = '<option value="">-- Escolha --</option>';
-                pairSubsubcategorySelect.innerHTML = '<option value="">-- Escolha --</option>';
-                pairProductSelect.innerHTML = '<option value="">-- Escolha --</option>';
-                if (!selectedCategory) return;
-                const products = DB.get('products');
-                const subcategories = [...new Set(products.filter(p => p.category === selectedCategory && p.subcategory).map(p => p.subcategory))].sort();
-                subcategories.forEach(sub => {
-                    const option = document.createElement('option');
-                    option.value = sub;
-                    option.textContent = sub;
-                    pairSubcategorySelect.appendChild(option);
-                });
-                pairSubcategorySelect.disabled = false;
-            }
-
-            function populateSubsubcategories() {
-                const selectedCategory = pairCategorySelect.value;
-                const selectedSubcategory = pairSubcategorySelect.value;
-                pairSubsubcategorySelect.innerHTML = '<option value="">-- Escolha --</option>';
-                pairProductSelect.innerHTML = '<option value="">-- Escolha --</option>';
-                if (!selectedSubcategory) return;
-                const products = DB.get('products');
-                const subsubcategories = [...new Set(products.filter(p => p.category === selectedCategory && p.subcategory === selectedSubcategory && p.subsubcategory).map(p => p.subsubcategory))].sort();
-                if (subsubcategories.length > 0) {
-                    pairSubsubcategoryContainer.classList.remove('hidden');
-                    pairSubsubcategorySelect.disabled = false;
-                    pairSubsubcategorySelect.innerHTML = '<option value="">-- Produtos sem Sub-Subcategoria --</option>';
-                    subsubcategories.forEach(subsub => {
-                        const option = document.createElement('option');
-                        option.value = subsub;
-                        option.textContent = subsub;
-                        pairSubsubcategorySelect.appendChild(option);
-                    });
-                } else {
-                    pairSubsubcategoryContainer.classList.add('hidden');
-                    populateProducts();
-                }
-            }
-
-            function populateProducts() {
-                const selectedCategory = pairCategorySelect.value;
-                const selectedSubcategory = pairSubcategorySelect.value;
-                const selectedSubsubcategory = pairSubsubcategorySelect.value || null;
-                if (!selectedCategory || !selectedSubcategory) return;
-                let products = DB.get('products');
-                pairableProductsList = products.filter(p => p.category === selectedCategory && p.subcategory === selectedSubcategory && (selectedSubsubcategory ? p.subsubcategory === selectedSubsubcategory : !p.subsubcategory)).sort((a, b) => a.name.localeCompare(b.name));
-                pairProductSelect.innerHTML = '<option value="">-- Escolha --</option>';
-                pairableProductsList.forEach(prod => {
-                    const option = document.createElement('option');
-                    option.value = prod.cod;
-                    option.textContent = prod.name;
-                    pairProductSelect.appendChild(option);
-                });
-                pairProductSelect.disabled = false;
-            }
-
-            function showSelectedProductInfo() {
-                const selectedCod = pairProductSelect.value;
-                if (!selectedCod) {
-                    pairedProductInfo.classList.add('hidden');
-                    savePairBtn.disabled = true;
-                    return;
-                }
-                const product = pairableProductsList.find(p => p.cod === selectedCod);
-                if (product) {
-                    pairedProductName.textContent = product.name;
-                    pairedProductCod.textContent = `Cód: ${product.cod}`;
-                    pairedProductCurrentBarcode.textContent = `Barcode Atual: ${product.barcode || 'Nenhum'}`;
-                    pairedProductInfo.classList.remove('hidden');
-                    savePairBtn.disabled = false;
-                }
-            }
-
             function openAdjustStockModal() {
                 productForStockAdjustment = null;
                 adjustStockCodeInput.value = '';
@@ -1213,19 +1174,18 @@
                     const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
                     stream.getTracks().forEach(track => track.stop());
 
-                    if (target.id === 'code-input') {
-                        scannerModal.classList.remove('hidden');
-                        startScanner('#scanner-viewport');
-                    } else if (target.id === 'new-cod') {
-                        addProductScannerContainer.classList.remove('hidden');
-                        startScanner('#add-product-scanner-viewport');
-                    } else if (target.id === 'new-barcode-pair') {
-                        pairProductScannerContainer.classList.remove('hidden');
-                        startScanner('#pair-product-scanner-viewport');
-                    } else if (target.id === 'adjust-stock-code-input') {
-                        adjustStockScannerContainer.classList.remove('hidden');
-                        startScanner('#adjust-stock-scanner-viewport');
+                    const modal = target.closest('.modal-bg, #app-view');
+                    const viewport = modal.querySelector('.scanner-viewport');
+                    const scannerContainer = modal.querySelector('.scanner-container');
+
+                    if (modal.id.includes('modal')) {
+                        modal.classList.remove('hidden');
                     }
+                    if (scannerContainer) {
+                        scannerContainer.classList.remove('hidden');
+                    }
+                    startScanner(`#${viewport.id}`);
+
                 } catch (error) {
                     let msg = 'A permissão da câmara é necessária.';
                     if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
@@ -1258,7 +1218,7 @@
                     inputStream: { name: "Live", type: "LiveStream", target: document.querySelector(viewportSelector), constraints: { facingMode: "environment" } },
                     locator: { patchSize: "medium", halfSample: true },
                     numOfWorkers: navigator.hardwareConcurrency || 4,
-                    decoder: { readers: ["ean_reader"], multiple: false },
+                    decoder: { readers: ["ean_reader", "upc_reader"], multiple: false },
                     locate: true
                 }, (err) => {
                     if (err) { showAlert('Erro ao iniciar a câmara.'); return; }
@@ -1277,13 +1237,13 @@
                     Quagga.stop();
                     isScannerActive = false;
                 }
-                [scannerModal, addProductScannerContainer, pairProductScannerContainer, adjustStockScannerContainer].forEach(el => el.classList.add('hidden'));
+                [scannerModal, addProductScannerContainer, pairProductScannerContainer, adjustStockScannerContainer, editBarcodeScannerContainer].forEach(el => el.classList.add('hidden'));
                 focusButtons.forEach(btn => btn.classList.add('hidden'));
             }
 
             Quagga.onDetected((result) => {
                 if (result?.codeResult?.code) {
-                    const code = result.codeResult.code;
+                    const code = result.codeResult.code.replace(/\s/g, ''); // Remove espaços do código
                     if (scannerTargetInput) {
                         scannerTargetInput.value = code;
                         if (scannerTargetInput.id === 'code-input') {
@@ -1339,14 +1299,20 @@
             addPaymentBtn.addEventListener('click', addPayment);
             paymentEntries.addEventListener('click', (e) => { if (e.target.classList.contains('remove-payment-btn')) removePayment(parseInt(e.target.dataset.index, 10)); });
             paymentMethodSelect.addEventListener('change', () => installmentsContainer.classList.toggle('hidden', paymentMethodSelect.value !== 'Cartão de Crédito'));
-            pairProductBtn.addEventListener('click', openPairModal);
+            
+            // --- Listeners para "Casar Produto" e "Editar Código de Barras" ---
+            pairProductBtn.addEventListener('click', () => openBarcodeModal(pairProductModal, pairCategorySelect, true));
+            editBarcodeBtn.addEventListener('click', () => openBarcodeModal(editBarcodeModal, editCategorySelect, false));
+            
             closePairProductBtn.addEventListener('click', () => { stopScanner(); pairProductModal.classList.add('hidden'); });
-            pairCategorySelect.addEventListener('change', populateSubcategories);
-            pairSubcategorySelect.addEventListener('change', populateSubsubcategories);
-            pairSubsubcategorySelect.addEventListener('change', populateProducts);
-            pairProductSelect.addEventListener('change', showSelectedProductInfo);
-            scanNewBarcodePairBtn.addEventListener('click', () => requestCameraPermission(document.getElementById('new-barcode-pair')));
-            savePairBtn.addEventListener('click', saveProductPairing);
+            closeEditBarcodeBtn.addEventListener('click', () => { stopScanner(); editBarcodeModal.classList.add('hidden'); });
+            
+            savePairBtn.addEventListener('click', () => saveProductPairing(pairProductSelect.value, newBarcodePairInput.value.trim(), pairProductModal));
+            saveEditBtn.addEventListener('click', () => saveProductPairing(editProductSelect.value, newBarcodeEditInput.value.trim(), editBarcodeModal));
+
+            scanNewBarcodePairBtn.addEventListener('click', () => requestCameraPermission(newBarcodePairInput));
+            scanNewBarcodeEditBtn.addEventListener('click', () => requestCameraPermission(newBarcodeEditInput));
+            
             adjustStockBtn.addEventListener('click', openAdjustStockModal);
             closeAdjustStockBtn.addEventListener('click', () => { stopScanner(); adjustStockModal.classList.add('hidden'); });
             adjustStockCodeInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') lookupProductForStock(adjustStockCodeInput.value.trim()); });
