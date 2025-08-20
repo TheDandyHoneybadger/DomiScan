@@ -273,6 +273,7 @@
                         <button type="button" id="scan-new-barcode-pair-btn" class="absolute right-1 top-1/2 -translate-y-1/2 bg-gray-200 hover:bg-gray-300 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" /><path stroke-linecap="round" stroke-linejoin="round" d="M3 6h18M3 10h18M3 14h18M3 18h18" /></svg></button>
                     </div>
                 </div>
+                <div><label for="new-stock-pair" class="block text-sm font-medium text-gray-700">6. Novo Estoque (Opcional)</label><input type="number" id="new-stock-pair" class="mt-1 block w-full px-4 py-2 text-base bg-gray-100 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"></div>
                 <button id="save-pair-btn" class="w-full py-3 mt-4 font-semibold text-white bg-green-600 rounded-lg hover:bg-green-700 disabled:bg-gray-400 transition-all" disabled>Salvar Novo Código de Barras</button>
             </div>
         </div>
@@ -297,6 +298,7 @@
                         <button type="button" id="scan-new-barcode-edit-btn" class="absolute right-1 top-1/2 -translate-y-1/2 bg-gray-200 hover:bg-gray-300 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" /><path stroke-linecap="round" stroke-linejoin="round" d="M3 6h18M3 10h18M3 14h18M3 18h18" /></svg></button>
                     </div>
                 </div>
+                <div><label for="new-stock-edit" class="block text-sm font-medium text-gray-700">6. Novo Estoque (Opcional)</label><input type="number" id="new-stock-edit" class="mt-1 block w-full px-4 py-2 text-base bg-gray-100 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"></div>
                 <button id="save-edit-btn" class="w-full py-3 mt-4 font-semibold text-white bg-green-600 rounded-lg hover:bg-green-700 disabled:bg-gray-400 transition-all" disabled>Salvar Alteração</button>
             </div>
         </div>
@@ -488,6 +490,8 @@
             const scanNewBarcodeEditBtn = document.getElementById('scan-new-barcode-edit-btn');
             const saveEditBtn = document.getElementById('save-edit-btn');
             const editBarcodeScannerContainer = document.getElementById('edit-barcode-scanner-container');
+            const newStockPairInput = document.getElementById('new-stock-pair');
+            const newStockEditInput = document.getElementById('new-stock-edit');
 
             function showAlert(message) {
                 alertMessage.textContent = message;
@@ -950,7 +954,7 @@
                 addProductModal.classList.add('hidden');
             }
 
-            function saveProductPairing(cod, newBarcode, modal) {
+            function saveProductPairing(cod, newBarcode, stock, modal, refreshCallback) {
                 if(!cod || !newBarcode) {
                     showAlert('Selecione um produto e forneça um novo código de barras.');
                     return;
@@ -961,11 +965,19 @@
                     showAlert('Produto não encontrado para casar o código.');
                     return;
                 }
+                
                 products[productIndex].barcode = newBarcode;
+                
+                const newStock = parseInt(stock, 10);
+                if (!isNaN(newStock)) {
+                    products[productIndex].estoque = newStock;
+                }
+
                 DB.set('products', products);
-                logChange('pair_product', { cod: cod, newBarcode: newBarcode });
-                showAlert('Código de barras associado com sucesso localmente!');
-                modal.classList.add('hidden');
+                logChange('pair_product', { cod: cod, newBarcode: newBarcode, newStock: newStock });
+                showAlert('Código de barras e estoque atualizados com sucesso!');
+                
+                refreshCallback();
             }
 
             function saveStockAdjustment() {
@@ -1209,7 +1221,7 @@
                 productSelect.disabled = false;
             }
 
-            function showSelectedProductInfoFor(productSelect, productInfo, productList) {
+            function showSelectedProductInfoFor(productSelect, productInfo, productList, stockInput) {
                 const selectedCod = productSelect.value;
                 const nameEl = productInfo.querySelector('[id*="-name"]');
                 const codEl = productInfo.querySelector('[id*="-cod"]');
@@ -1226,6 +1238,7 @@
                     nameEl.textContent = product.name;
                     codEl.textContent = `Cód: ${product.cod}`;
                     barcodeEl.textContent = `Barcode Atual: ${product.barcode || 'Nenhum'}`;
+                    stockInput.value = product.estoque || '';
                     productInfo.classList.remove('hidden');
                     saveBtn.disabled = false;
                 }
@@ -1405,15 +1418,25 @@
             pairCategorySelect.addEventListener('change', () => populateSubcategoriesFor(pairCategorySelect, pairSubcategorySelect, pairSubsubcategorySelect, pairProductSelect, 'pair', true));
             pairSubcategorySelect.addEventListener('change', () => populateSubsubcategoriesFor(pairCategorySelect, pairSubcategorySelect, pairSubsubcategorySelect, pairProductSelect, 'pair', true));
             pairSubsubcategorySelect.addEventListener('change', () => populateProductsFor(pairCategorySelect, pairSubcategorySelect, pairSubsubcategorySelect, pairProductSelect, 'pair', true));
-            pairProductSelect.addEventListener('change', () => showSelectedProductInfoFor(pairProductSelect, pairedProductInfo, pairableProductsList));
+            pairProductSelect.addEventListener('change', () => showSelectedProductInfoFor(pairProductSelect, pairedProductInfo, pairableProductsList, newStockPairInput));
 
             editCategorySelect.addEventListener('change', () => populateSubcategoriesFor(editCategorySelect, editSubcategorySelect, editSubsubcategorySelect, editProductSelect, 'edit', false));
             editSubcategorySelect.addEventListener('change', () => populateSubsubcategoriesFor(editCategorySelect, editSubcategorySelect, editSubsubcategorySelect, editProductSelect, 'edit', false));
             editSubsubcategorySelect.addEventListener('change', () => populateProductsFor(editCategorySelect, editSubcategorySelect, editSubsubcategorySelect, editProductSelect, 'edit', false));
-            editProductSelect.addEventListener('change', () => showSelectedProductInfoFor(editProductSelect, editedProductInfo, editableProductsList));
+            editProductSelect.addEventListener('change', () => showSelectedProductInfoFor(editProductSelect, editedProductInfo, editableProductsList, newStockEditInput));
 
-            savePairBtn.addEventListener('click', () => saveProductPairing(pairProductSelect.value, newBarcodePairInput.value.trim(), pairProductModal));
-            saveEditBtn.addEventListener('click', () => saveProductPairing(editProductSelect.value, newBarcodeEditInput.value.trim(), editBarcodeModal));
+            savePairBtn.addEventListener('click', () => saveProductPairing(pairProductSelect.value, newBarcodePairInput.value.trim(), newStockPairInput.value, pairProductModal, () => {
+                populateProductsFor(pairCategorySelect, pairSubcategorySelect, pairSubsubcategorySelect, pairProductSelect, 'pair', true);
+                newBarcodePairInput.value = '';
+                newStockPairInput.value = '';
+                pairedProductInfo.classList.add('hidden');
+            }));
+            saveEditBtn.addEventListener('click', () => saveProductPairing(editProductSelect.value, newBarcodeEditInput.value.trim(), newStockEditInput.value, editBarcodeModal, () => {
+                populateProductsFor(editCategorySelect, editSubcategorySelect, editSubsubcategorySelect, editProductSelect, 'edit', false);
+                newBarcodeEditInput.value = '';
+                newStockEditInput.value = '';
+                editedProductInfo.classList.add('hidden');
+            }));
 
             scanNewBarcodePairBtn.addEventListener('click', () => requestCameraPermission(newBarcodePairInput));
             scanNewBarcodeEditBtn.addEventListener('click', () => requestCameraPermission(newBarcodeEditInput));
